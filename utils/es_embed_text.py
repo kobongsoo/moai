@@ -161,7 +161,8 @@ class ES_Embed_Text:
             "script_score":{
                 "query":query,
                 "script":{
-                    "source": "cosineSimilarity(params.qrVector, doc['qr_vector']) + 1.0",  # 뒤에 1.0 은 코사인유사도 측정된 값 + 1.0을 더해준 출력이 나옴
+                    #"source": "cosineSimilarity(params.qrVector, doc['qr_vector']) + 1.0",  # 뒤에 1.0 은 코사인유사도 측정된 값 + 1.0을 더해준 출력이 나옴
+                    "source": "cosineSimilarity(params.qrVector, 'qr_vector') + 1.0",  # 뒤에 1.0 은 코사인유사도 측정된 값 + 1.0을 더해준 출력이 나옴
                     "params": {"qrVector": qr_vector}
                 }
             }

@@ -25,8 +25,8 @@ def generate_text_davinci(gpt_model:str, prompt:str,
     data = {
         'model': gpt_model,
         'prompt': prompt,
-        'max_tokens': 350,
-        'temperature':0.5,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+        'max_tokens': 1024,
+        'temperature':1,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
         'stream': stream,
         #'top_p': 0.1,      # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
         #'frequency_penalty':1, # 일반적으로 나오지 않는 단어를 억제하는 정도
@@ -107,7 +107,7 @@ def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="",
         'model': gpt_model,
         'messages': messages,
         'max_tokens': 1024,
-        'temperature':0.5,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+        'temperature':1,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
         'stream': stream,
         #'top_p': 0.1,      # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
         #'frequency_penalty':1, # 일반적으로 나오지 않는 단어를 억제하는 정도
@@ -193,8 +193,8 @@ def generate_text_GPT(gpt_model:str, prompt:str, system_prompt:str="",
         response = openai.ChatCompletion.create(
             model=gpt_model,
             messages=messages,  
-            max_tokens=512, # 토큰 수 
-            temperature=0.5,  # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+            max_tokens=1024, # 토큰 수 
+            temperature=1,  # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
             stream=stream,
             #top_p=0.1, # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
             #frequency_penalty=1, # 일반적으로 나오지 않는 단어를 억제하는 정도

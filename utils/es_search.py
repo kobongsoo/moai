@@ -155,7 +155,8 @@ def make_query_script(query_vector, uid_list:list=None)->str:
         "script_score":{
             "query":query,
             "script":{
-                "source": "cosineSimilarity(params.queryVector, doc['vector1']) + 1.0",  # 뒤에 1.0 은 코사인유사도 측정된 값 + 1.0을 더해준 출력이 나옴
+                #"source": "cosineSimilarity(params.queryVector, doc['vector1']) + 1.0",  # 뒤에 1.0 은 코사인유사도 측정된 값 + 1.0을 더해준 출력이 나옴
+                "source": "cosineSimilarity(params.queryVector, 'vector1') + 1.0",
                 "params": {"queryVector": query_vector}
             }
         }

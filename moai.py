@@ -281,6 +281,8 @@ def similar_query(prequery_docs:list, template:dict):
                     "action": "message",
                     "label": f"{prequery_docs[idx]['query']}({myutils.get_es_format_score(prequery_score)}%)"
                 }
+                
+                myutils.log_message(f'\t[similar_query]=>{template}')
 
                 template["template"]["quickReplies"].append(additional_structure)
 
@@ -373,7 +375,7 @@ async def call_callback(settings:dict, user_id:str, user_mode:int, callbackurl:s
                 if user_mode == 2: # AI 검색(user_mode=2) 
                     preanswers = userdb.select_assistants(user_id=user_id)
                     if preanswers != -1:
-                        for preanswer in preanswers:
+                        for preanswer in reversed(preanswers):  # 역순으로 저장해둠.
                             if preanswer['preanswer']:
                                 preanswer_list.append(preanswer['preanswer'])
 
@@ -414,7 +416,9 @@ async def call_callback(settings:dict, user_id:str, user_mode:int, callbackurl:s
         formatted_elapsed_time = "{:.2f}".format(end_time - start_time)
         
         label_str:str = "다시 검색.."
-        if user_mode == 5: 
+        if user_mode == 2:
+            label_str = "다시 질문.."  
+        elif user_mode == 5: 
             label_str = "다시 요약.."    
         #--------------------------------
         if user_mode == 6 or user_mode == 7: # 이미지 OCR 인 경우
@@ -474,9 +478,7 @@ async def call_callback(settings:dict, user_id:str, user_mode:int, callbackurl:s
         elif user_mode == 2 or user_mode == 7:  # 채팅모드(user_mode=2) 혹은 이미지OCR 내용 요약(user_mode==7) 인 경우
             if len(response) > 330: # 응답 길이가 너무 크면 simpletext로 처리함
                 text = f"🤖{query}\n\n(time:{str(formatted_elapsed_time)})\n{response}"
-                if user_mode == 2:
-                    query = '🤖' + query
-                    
+                
                 template = {
                     "version": "2.0",
                     "template": {
@@ -489,7 +491,20 @@ async def call_callback(settings:dict, user_id:str, user_mode:int, callbackurl:s
                         ]
                     }
                 }
+
+                if user_mode == 2:
+                    template["template"]["quickReplies"] = [
+                        {
+                            "action": "message",
+                            "label": label_str,
+                            "messageText": '?' + query,
+                        }
+                    ]
+
             else:
+                if user_mode == 2:
+                    query = '🤖' + query
+                    
                 template["template"]["outputs"].append({
                     "textCard": {
                         "title": query,
