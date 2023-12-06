@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP_NAME=kakao:app
+APP_NAME=moai:app
 
 start() {
   echo "Starting $APP_NAME"
