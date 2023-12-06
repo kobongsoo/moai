@@ -415,11 +415,11 @@ async def call_callback(settings:dict, user_id:str, user_mode:int, callbackurl:s
         end_time = time.time()
         formatted_elapsed_time = "{:.2f}".format(end_time - start_time)
         
-        label_str:str = "다시 검색.."
+        label_str:str = "다시검색.."
         if user_mode == 2:
-            label_str = "다시 질문.."  
+            label_str = "다시질문.."  
         elif user_mode == 5: 
-            label_str = "다시 요약.."    
+            label_str = "다시요약.."    
         #--------------------------------
         if user_mode == 6 or user_mode == 7: # 이미지 OCR 인 경우
             template = {
@@ -745,12 +745,14 @@ async def chabot3(content1: Dict):
                 
             # 1.80 이상일때만 이전 답변 보여줌.
             if prequery_score >= 1.80:  
+                label_str:str = "다시검색.."
                 if user_mode == 0:
-                    query1 = f'📃{query}'
+                    query1 = f'📃{query}'                   
                 elif user_mode == 1:
                     query1 = f'🌐{query}'
                 else:
                     query1 = f'🤖{query}'
+                    label_str = "다시질문.."
                         
                 # 정확도 스코어 구함
                 format_prequery_score = myutils.get_es_format_score(prequery_score)
@@ -762,7 +764,7 @@ async def chabot3(content1: Dict):
                         "quickReplies": [
                             {
                                 "action": "message",
-                                "label": "다시검색..",
+                                "label": label_str,
                                 "messageText": '?'+query
                             }
                           ]
