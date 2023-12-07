@@ -1,0 +1,20 @@
+transformers[torch]
+sentence_transformers
+elasticsearch==7.17
+kss
+scikit-learn-extra
+fastapi[all]
+openai==0.28.1
+google-api-python-client
+googletrans==4.0.0-rc1
+google-cloud-vision
+numpy
+pandas
+sseclient-py
+chardet
+pymysql
+python-dateutil
+
+python 버전 확인 : centos: pip --version 
+pip 버전 확인시 python 3.9.x 여야 아래 모듈 설치할수 있음.
+pip install ./moai/mpowerai/pympower_ext/pympower_ext-10.0-cp39-cp39-linux_x86_64.whl
