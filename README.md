@@ -118,3 +118,18 @@ networks:
   es_network:
 
 ```
+## 참고소스
+|명칭|설명|참고|
+|:----------------|:---------------------------------------------------------|--------|
+|[documet_embed](https://github.com/kobongsoo/moai/blob/master/documet_embed.ipynb)|문서들을 elasticsearch로 임베딩 하는 코드||
+|[google_search](https://github.com/kobongsoo/moai/blob/master/google_search.ipynb)|구글 검색 예제|1일 10,000건 무료|
+|[google_vison_ocr](https://github.com/kobongsoo/moai/blob/master/google_vison_ocr.ipynb)|구글 비전 OCR 예제|1달 10,000건 무료, 10,000건당 1.5$|
+|[googletrans_test](https://github.com/kobongsoo/moai/blob/master/googletrans_test.ipynb)|구글 번역 예제|무료:번역 질이 좀 떨어짐|
+|[gpt_test](https://github.com/kobongsoo/moai/blob/master/gpt_test.ipynb)|gpt 테스트 예제||
+|[naver_search_test](https://github.com/kobongsoo/moai/blob/master/naver_search_test.ipynb)|네이버 검색 예제|1일 25,000건|
+|[papago_test](https://github.com/kobongsoo/moai/blob/master/papago_test.ipynb)|네이버 파파고 테스트 예제|1일 10,000자|
+|[sqllitedb_test](https://github.com/kobongsoo/moai/blob/master/sqllitedb_test.ipynb)|sqlite 테스트 예제||
+|[webscraping_test](https://github.com/kobongsoo/moai/blob/master/webscraping_test.ipynb)|웹스크래핑 예제||
+
+
+
