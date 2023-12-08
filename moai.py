@@ -106,7 +106,7 @@ webscraping = WebScraping()
 
 # 이미지 OCR
 # google_vision 인증 json 파일 => # 출처: https://yunwoong.tistory.com/148
-service_account_jsonfile_path = "./data/vison-ocr-406902-3f2c14c7457f.json"
+service_account_jsonfile_path = "./data/vison-ocr.json"
 google_vision = Google_Vision(service_account_jsonfile_path=service_account_jsonfile_path)
 #---------------------------------------------------------------------------
 # url 스크래핑 한후 synap으로 문서내용 추출하는 함수 
