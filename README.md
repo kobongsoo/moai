@@ -78,8 +78,8 @@ GPT_TOKEN:  openai api key => https://antilibrary.org/2760
 NAVER_CLIENT_ID: 네이버 검색 id : https://developers.naver.com/main/
 NAVER_CLINET_SECRET:  네이버 검색 secret : https://developers.naver.com/main/
 
-GOOGLE_API_KEY: 구글 검색을 위한 api key => 참고: https://programmablesearchengine.google.com/controlpanel/all
-GOOGLE_SEARCH_ENGINE_ID: 구글 검색 엔진 id
+GOOGLE_API_KEY: 구글 검색을 위한 api key => https://www.delftstack.com/ko/howto/python/python-google-search-api/
+GOOGLE_SEARCH_ENGINE_ID: 구글 검색 엔진 id => 검색엔진 만들기: https://programmablesearchengine.google.com/controlpanel/all 
 ```
 #### 3) Google Cloud Vision API 키 발급
 - https://yunwoong.tistory.com/148 참고하여, xxx.json 파일 발급 하여 vison-ocr.json 으로 이름 변경 후 moai_data 폴더에 복사.(이미지 글자 추출 용도)
