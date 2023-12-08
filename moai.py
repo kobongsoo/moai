@@ -19,8 +19,8 @@ from tqdm.notebook import tqdm
 
 # mpowerai
 from os import sys
-sys.path.append('./mpowerai')
-from pympower.classes.mshaai import MShaAI
+#sys.path.append('./mpowerai')
+#from pympower.classes.mshaai import MShaAI
 
 # os가 윈도우면 from eunjeon import Mecab 
 if platform.system() == 'Windows':
@@ -74,7 +74,7 @@ openai.api_key = settings['GPT_TOKEN']# **GPT  key 지정
 # => 모델 목록은 : https://platform.openai.com/docs/models/gpt-4 참조
 gpt_model = settings['GPT_MODEL']  #"gpt-4"#"gpt-3.5-turbo" #gpt-4-0314
 
-SCRAPING_WEB_MAX_LEN = 8000  # 웹 및 문서url 스크래핑 할때 최대 길이
+SCRAPING_WEB_MAX_LEN = 4000  # 웹 url 스크래핑 할때 최대 길이  (webscraping 에서 최대값은 6000 이므로 6000보다 작게 설정해야함)
 #---------------------------------------------------------------------------
 # 클래스 초기화
 # chabot3함수에서 중복 질문 방지를 위한 id 관리 클래스 초기화
@@ -102,7 +102,7 @@ prequery_embed = ES_Embed_Text(es_url=settings['ES_URL'], index_name=index_name,
 
 # url 웹스크래핑
 webscraping = WebScraping()
-shaai = MShaAI() # mpowerai(synap 문서필터)
+#shaai = MShaAI() # mpowerai(synap 문서필터)
 
 # 이미지 OCR
 # google_vision 인증 json 파일 => # 출처: https://yunwoong.tistory.com/148
@@ -111,14 +111,21 @@ google_vision = Google_Vision(service_account_jsonfile_path=service_account_json
 #---------------------------------------------------------------------------
 # url 스크래핑 한후 synap으로 문서내용 추출하는 함수 
 # url: 추출할 url(문서url 혹은 웹페이지), srcfilepath: url 다운로드후 저장할 파일경로, tarfilepath: synap으로 내용 추출후 저장할 파일 경로
-def scraping_web(url:str, srcfilepath:str, tarfilepath:str):
+def scraping_web(url:str):
     assert url ,f'url is empty'
-    assert srcfilepath ,f'srcfilepath is empty'
-    assert tarfilepath ,f'tarfilepath is empty'
-    
+   
     error:int = 0
     text:str = ""
-    
+
+    try:
+        text = webscraping.scraping(url=url, min_len=20)
+        if len(text) > SCRAPING_WEB_MAX_LEN:
+            text = text[0:SCRAPING_WEB_MAX_LEN-1]
+    except Exception as e:
+        print(f'extract error=>{e}')
+        error = 1002
+        
+    '''    
     try:
         error = webscraping.url_download(url=url, filepath=srcfilepath) # url 다운로드
     except Exception as e:
@@ -136,6 +143,7 @@ def scraping_web(url:str, srcfilepath:str, tarfilepath:str):
         except Exception as e:
             print(f'extract error=>{e}')
             error = 1002
+    '''
     
     return text, error
 #---------------------------------------------------------------------------
@@ -871,14 +879,7 @@ async def chabot3(content1: Dict):
     #----------------------------------------
     # 5=URL 모드
     if user_mode == 5:
-        srcfilepath = './tmp/'+str(user_id)+'.url' # 파일경로는 userid.url로 함.
-        tarfilepath = './tmp/'+str(user_id)+'.mpower'
-        
-        # tmp 폴더가 없으면 생성합니다.
-        if not os.path.exists('./tmp'):
-            os.makedirs('./tmp')
-        
-        context, error = scraping_web(url=query, srcfilepath=srcfilepath, tarfilepath=tarfilepath)
+        context, error = scraping_web(url=query)
         if len(context) > 300:
             if len(context) > SCRAPING_WEB_MAX_LEN:
                 context = context[0:SCRAPING_WEB_MAX_LEN-1]
