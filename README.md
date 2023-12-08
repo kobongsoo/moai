@@ -1,6 +1,9 @@
 # moai
+<img width="212" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/b36c2ab1-2723-4bd6-9984-a00693bdc9c4">
+
+
 <br>모아이(moai)는 이스타섬이 얼굴석상을 말하며, mo+AI 합쳐서 moai 입니다.
-<br>모아이는 카카오톡에서 사용할 수 있는 채팅 및 검색 AI 로써 카카오톡에서 아래 채널을 등록하시면 사용할수 있습니다.
+<br>모아이는 카카오톡에서 사용할 수 있는 채팅 및 검색 AI 로써 카카오톡에서 아래 채널을 등록하시면 사용할 수 있습니다.
 - 카카오톡 채널 : http://pf.kakao.com/_tdLxjG/chat
 ## 주요기능
 1. 질문을 하면 이전 검색 및 질문 해던 내용에서 **유사한 질문과 답변**을 보여줍니다.
@@ -20,32 +23,43 @@ ngrok http 9000
   <br> 참고 : https://ngrok.com/
   
 ### 2. 카카오톡 채널과 챗봇 개설 & 연동
-- 카카오톡 비지니스에 가입해서 채널과 챗봇을 만듬.
+- 카카오톡 비지니스 (https://business.kakao.com/dashboard/) 에 가입해서 채널과 챗봇을 만듬.
 <br> 참조: https://blog.naver.com/michaelchae/222640935084
 - 콜백 신청 : 챗봇 > 설정 > AI 챗봇 관리 에서 AI 챗봇을 신청(1일 걸림)
 <img width="441" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/7c2a5530-2404-431e-877e-9a5ac6d9fa7b">
 
-- 챗봇 > 풀백 스킬 등록 : URL은 "https:/{ngrokurl}/chatbot3" 식으로 등록.
-<img width="518" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/fb35a1b1-444a-4be5-95bd-474f966599b0">
-  
-- 챗봇 > 시나리오 > 풀백블록에 위 플백 스킬 연동. 이후 [...] 눌러서 Callback 설정 하고 아래처럼 입력.
-<img width="420" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/2e1dfae3-33f7-4c39-a412-cc6af705ef85">
+- 챗봇 > 풀백 스킬 등록 : URL은 "https:/{ngrokurl}/**chatbot3**" 식으로 등록.
+<img width="744" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/4a708c4c-baa9-4413-a5b1-372031be2b18">
 
-- 챗봇 > 기타 스킬 등록 : 아랙 5개 스킬 등록
+- 챗봇 > 시나리오 > 백블록에 위 플백 스킬 연동. 이후 [...] 눌러서 Callback 설정 하고 **{{#webhook.text}}** 입력.
+<img width="701" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/0f914689-6595-4ed3-a166-33e217cc0251">
+
+<img width="403" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/6f1c0dff-ec27-40ab-8ea4-ec6ff199a97c">
+
+- 챗봇 > 기타 스킬 등록 : 풀백 스킬 등록때 처럼 아래 5개 스킬 등록
 ```
-본문검색스킬 : https://{ngrokurl}/searchdoc 
+본문검색스킬 : https://{ngrokurl}/searchdoc
 웹문서스킬 : https://{ngrokurl}/searchweb
 채팅스킬 : https://{ngrokurl}/searchai
 설명스킬 : https://{ngrokurlL}/info
 설정스킬 : https://{ngrokurl}/setting
 ```
 - 챗봇 > 시나리오 : 3개 블록 생성 하고 각 스킬을 연결한다.
-  <br> 본문검색블록 : 본문검색스킬 연결, 웹문서검색블록: 웹문서검색 스킬 연결, 채팅문서블 : 채팅스킬 연결
-- 챗봇 > 시나리오 설정 클릭후 커스텀메뉴 만들고, '채팅하기', '본문검색', '웹검색' 버튼 추가함.
-<img width="402" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/ba298139-148a-4531-88e2-9e3bd011ae38">
+```
+본문검색블록 <-> 본문검색스킬 연결
+웹문서검색블록 <-> 웹문서검색 스킬 연결
+채팅문서블록 <-> 채팅스킬 연결
+```
+<img width="711" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/3a58f16d-bba0-4b34-b4b4-d171169e9202">
+
+- 챗봇 > 시나리오 설정, 클릭 후 커스텀메뉴 만들고, '채팅하기', '본문검색', '웹검색' 버튼 추가함.
+<img width="407" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/908d86fb-1b3c-4298-b7b8-87f382e4aa39">
 
 - 챗봇 > 설정을 눌러서 카카오톡 채널 연결에서 챗봇과 채널 연결한다.
+<img width="633" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/c0733357-6581-4c52-9b29-83a22597cf11">
+
 - 챗봇 > 배포를 눌러서 배포 하면, 이제 카카오톡에서 생성한 채널로 들어가면 된다.
+<img width="631" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/f79d2a3c-ed14-4a3d-bdf6-2f3c1c7b3785">
 
 ### 3. 모아이 서버 실행
 - 모아이는 docker 이미지로 구성되어 있으므로, 아래처럼 docker compose로 실행하면 됨.
