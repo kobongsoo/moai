@@ -252,3 +252,101 @@ class SqliteDB:
             dbquery = f"DELETE FROM assistants WHERE id = '{user_id}'"
             self.c.execute(dbquery)
             self.conn.commit()
+    #----------------------------------------------           
+    # 퀴즈 테이블 관련
+    # id => key 값, type=100: last 질문과응답, type=0~5 : 퀴즈 질문과 응답, userid:사용자 id, query:질문, response: 답변, answer: 퀴즈 정답, info: 퀴즈 설명
+    def select_quiz(self, userid:str, type:int=100):
+        assert userid, f'userid is empty'
+
+        if type == 100:
+            dbquery = f"SELECT * FROM quiz WHERE userid='{userid}' and type={type}"
+        else:
+            dbquery = f"SELECT * FROM quiz WHERE userid='{userid}' and type!=100"
+            
+        df = pd.read_sql_query(dbquery, self.conn)
+
+        quizes:list = []
+        quize_num:int = -1
+        
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['type']=df['type'][idx]
+                data['userid']=df['userid'][idx]
+                data['query']=df['query'][idx]
+                data['response']=df['response'][idx]
+                data['answer']=df['answer'][idx]
+                data['info']=df['info'][idx]
+                quizes.append(data)
+
+                quize_num = df['type'][idx]  # *퀴즈계수는 맨마지막 데이터에 type 번호임.
+
+            return quizes, quize_num
+        else:
+            return -1, quize_num
+        
+    # insert_quize
+    # id => key 값, type=100: last 질문과응답, type=0~5 : 퀴즈 질문과 응답, userid:사용자 id, query:질문, response: 답변, answer: 퀴즈 정답, info: 퀴즈 설명
+    def insert_quiz(self, type:int, userid:str, query:str, response:str="", answer:str="", info:str=""):
+        
+        assert type > -1, f'type is wrong'
+        assert userid, f'userid is empty'
+        assert query, f'query is empty'
+
+        unique_id:str = ""
+        
+        try:
+            dbquery = f"SELECT * FROM quiz WHERE userid='{userid}' and type={type}"
+            df = pd.read_sql_query(dbquery, self.conn)
+                              
+            if len(df) > 0: # 똑같은 type이 있으면 기존거 삭제
+                unique_id = df['id'][0]
+                dbquery = f"DELETE FROM quiz WHERE userid = '{userid}' and id = '{unique_id}'"
+                self.c.execute(dbquery)
+                self.conn.commit()
+            
+            # UUID4를 사용하여 랜덤한 유니크한 ID 생성
+            unique_id:str = str(uuid.uuid4())
+            
+            dbquery = f"INSERT INTO quiz (id, type, userid, query, response, answer, info) VALUES ('{unique_id}',{type}, '{userid}', '{query}', '{response}', '{answer}', '{info}')"
+            print(f'[insert_quiz]=>dbquery:{dbquery}')
+            self.c.execute(dbquery)
+            self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'insert_quiz=>error:{e}')
+            return 1001
+        
+    # quiz 테이블 :해당 id 있으면 삭제
+    def delete_quiz_all(self, userid:str):
+        assert userid, f'userid is empty'
+
+        dbquery = f"SELECT * FROM quiz WHERE userid='{userid}'"
+        df = pd.read_sql_query(dbquery, self.conn)
+        
+        if len(df) > 0: # 있으면 모두 제거
+            dbquery = f"DELETE FROM quiz WHERE userid = '{userid}'"
+            self.c.execute(dbquery)
+            self.conn.commit()
+            
+    # quiz 테이블중 퀴즈인 것만 삭제 (type!=100 인것)
+    def delete_quiz(self, userid:str):
+        assert userid, f'userid is empty'
+        res = self.select_quiz(userid=userid, type=1)
+        
+        if res != -1:
+            dbquery = f"DELETE FROM quiz WHERE userid = '{userid}' and type!=100"
+            self.c.execute(dbquery)
+            self.conn.commit()
+            
+    # quiz 테이블 :해당 id에 지정한 type만  있으면 삭제
+    def delete_quiz_type(self, userid:str, type:int):
+        assert userid, f'userid is empty'
+        res = self.select_quiz(userid=userid, type=type)
+        
+        if res != -1:
+            dbquery = f"DELETE FROM quiz WHERE userid = '{userid}' and type={type}"
+            self.c.execute(dbquery)
+            self.conn.commit()
+    #----------------------------------------------    
