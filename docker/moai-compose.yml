@@ -1,0 +1,45 @@
+# elasticsearch 7.17.x
+
+version: '1.0'
+
+services:
+  elasticsearch:
+    image: bong9431/elasticsearch:7.17.13.1
+    restart: always
+    environment:
+      - discovery.type=single-node
+    ports: 
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - es_network
+    volumes:
+      - ./moai_es_data:/usr/share/elasticsearch/data
+    
+  kibana:
+    image: kibana:7.17.13
+    restart: always
+    depends_on:
+        - elasticsearch
+    ports:
+      - 5601:5601
+    networks:
+      - es_network
+
+  moai:
+      image: bong9431/moai:1.0
+      restart: always
+      depends_on:
+        - elasticsearch
+      ports:
+        - 9000:9000
+        - 9999:9999
+      networks:
+        - es_network
+      volumes:
+        - ./moai_log:/moai/log
+        - ./moai_data:/moai/data
+
+networks:
+  es_network:
+   

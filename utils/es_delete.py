@@ -61,9 +61,9 @@ def es_embed_delete(esindex:str, uids:str, es_url:str):
     # 3. 삭제함.
     if len(id_list) > 0:  
         for id in id_list:
-            print(f'id:{id}')
+            #print(f'id:{id}')
             res=es_delete_by_id(es, index_name=esindex, id=id)
-            print(f'res:{res}')
+            #print(f'res:{res}')
             
         return 0
     else:

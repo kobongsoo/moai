@@ -26,12 +26,12 @@ import uuid
 #db.execute(query)
 #--------------------------------------------------------------------------------
 class SqliteDB:
-    def __init__(self, dbname:str):
+    def __init__(self, dbname:str, assistants_len:int=3):
         assert dbname, f'dbname is empty'
         
         self.dbname = dbname
         
-        self.assistants_len = 3  # gpt 이전 대화 저장 계수
+        self.assistants_len = assistants_len  # gpt 이전 대화 저장 계수
         
         # 연결할 때
         self.conn = sq.connect(self.dbname)
@@ -170,7 +170,7 @@ class SqliteDB:
             else: # 있으면 업데이트
                 dbquery = f"UPDATE setting SET site='{site}', prequery={prequery} WHERE id = '{user_id}'"
 
-            print(f'[insert_setting]=>dbquery:{dbquery}')
+            #print(f'[insert_setting]=>dbquery:{dbquery}')
             self.c.execute(dbquery)
             self.conn.commit()
             return 0
@@ -218,7 +218,7 @@ class SqliteDB:
         try:
             
             res = self.select_assistants(user_id)
-            print(f'[insert_assistants]=>res:{res}')
+            #print(f'[insert_assistants]=>res:{res}')
             
             # 800 글자보다 크면 799 글자까지만 저장해둠.
             if len(preanswer) > 800:
@@ -235,7 +235,7 @@ class SqliteDB:
             unique_id:str = str(uuid.uuid4())
             
             dbquery = f"INSERT INTO assistants (uid, id, preanswer) VALUES ('{unique_id}','{user_id}', '{preanswer}')"
-            print(f'[insert_assistants]=>dbquery:{dbquery}')
+            #print(f'[insert_assistants]=>dbquery:{dbquery}')
             self.c.execute(dbquery)
             self.conn.commit()
             return 0
@@ -310,7 +310,7 @@ class SqliteDB:
             unique_id:str = str(uuid.uuid4())
             
             dbquery = f"INSERT INTO quiz (id, type, userid, query, response, answer, info) VALUES ('{unique_id}',{type}, '{userid}', '{query}', '{response}', '{answer}', '{info}')"
-            print(f'[insert_quiz]=>dbquery:{dbquery}')
+            #print(f'[insert_quiz]=>dbquery:{dbquery}')
             self.c.execute(dbquery)
             self.conn.commit()
             return 0

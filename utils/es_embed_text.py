@@ -297,19 +297,19 @@ class ES_Embed_Text:
                 prequery_score = hit['_score']
                 prequery = hit["_source"]["query"]
                 preresponse = hit["_source"]["response"]
-                print(f'\t==>[delete_insert_doc]=>prequery_id:{prequery_id}, prequery:{prequery}, prequery_score:{prequery_score}')
+                #print(f'\t==>[delete_insert_doc]=>prequery_id:{prequery_id}, prequery:{prequery}, prequery_score:{prequery_score}')
                 
                 # 기존 질문과 스코어가 1.80 이상이면 해당 질문과 답변, 질문벡터등을 업데이트 함.=>삭제하고 insert 함.(dense_vector은 업데이트 안됨)
                 if prequery_score >= 1.80:
                     res = self.delete_by_id(esid=prequery_id)              
-                    print(f'\t==>[delete_insert_doc]=>self.delete_by_id=>res:{res}')
+                    #print(f'\t==>[delete_insert_doc]=>self.delete_by_id=>res:{res}')
                 break
                                
             # 인덱스 추가
             doc1['qr_vector'] = embeddings
             doc1['classification'] = classification
             res = self.insert(doc=doc1, doc_type="_doc")
-            print(f'\t==>[delete_insert_doc]=>self.insert=>res:{res}')
+            #print(f'\t==>[delete_insert_doc]=>self.insert=>res:{res}')
             
             # 유사한 질문들을 추출함.
             prequery_docs:list = []

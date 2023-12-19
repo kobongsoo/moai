@@ -8,7 +8,9 @@ from bs4 import BeautifulSoup
 # 웹스크래핑 처리
 class WebScraping:
     
-    def __init__(self):
+    def __init__(self, scraping_web_max_len:int=4000):
+        assert scraping_web_max_len > 0, f'scraping_web_max_len is < 0'
+        scraping_web_max_len = scraping_web_max_len
         return
     
     def __del__(self):
@@ -184,3 +186,19 @@ class WebScraping:
                     context += text+'\n'
                   
         return context
+
+    # url 스크래핑 한후 synap으로 문서내용 추출하는 함수 
+    # url: 추출할 url(문서url 혹은 웹페이지), srcfilepath: url 다운로드후 저장할 파일경로, tarfilepath: synap으로 내용 추출후 저장할 파일 경로
+    def scraping_web(self, url:str):
+        assert url ,f'url is empty'
+       
+        error:int = 0; text:str = ""
+    
+        try:
+            text = self.scraping(url=url, min_len=20)
+            if len(text) > self.scraping_web_max_len:
+                text = text[0:self.scraping_web_max_len-1]
+        except Exception as e:
+            print(f'extract error=>{e}')
+            error = 1002    
+        return text, error

@@ -33,7 +33,7 @@ def generate_text_davinci(gpt_model:str, prompt:str,
         #'presence_penalty': 0.5 # 동일한 단어나 구문이 반복되는 것을 억제하는 정도
     }
     
-    print(f'data:{data}')
+    #print(f'data:{data}')
 
     for i in range(2): 
         try:
@@ -101,7 +101,7 @@ def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="",
     if len(prompt) > 0:
         messages.append( {"role": "user", "content": prompt} )
         
-    print(f'messages:{messages}')
+    #print(f'messages:{messages}')
     
     data = {
         'model': gpt_model,
@@ -114,7 +114,7 @@ def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="",
         #'presence_penalty': 0.5 # 동일한 단어나 구문이 반복되는 것을 억제하는 정도
     }
     
-    print(f'data:{data}')
+    #print(f'data:{data}')
 
     for i in range(2): 
         try:
@@ -126,7 +126,7 @@ def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="",
                 timeout=timeout  # Set your desired timeout in seconds
             )
             
-            print(response)
+            #print(response)
             
             # 스트림 아닐때
             if stream == False:
@@ -209,7 +209,7 @@ def generate_text_GPT(gpt_model:str, prompt:str, system_prompt:str="",
                 chunk = line['choices'][0].get('delta', {}).get('content', '')
                 if chunk:
                     answer += chunk
-                    print(chunk)
+                    #print(chunk)
                     #print(chunk, end='')
             
         # 소요된 시간을 계산합니다.

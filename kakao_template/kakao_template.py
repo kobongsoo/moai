@@ -27,8 +27,8 @@ class Callback_Template:
             formatted_score = "{:.0f}".format((score-1)*100)
         return formatted_score
     #---------------------------------------------------------------------------------            
-    # 회사본문검색 
-    def template_0(self, query:str, response:str, elapsed_time:str=""):
+    # 본문검색 
+    def template_text_search(self, query:str, response:str, elapsed_time:str=""):
         assert query, f'query is empty'
         assert response, f'response is empty'
 
@@ -74,7 +74,7 @@ class Callback_Template:
         return template
     #---------------------------------------------------------------------------------        
     # 웹검색     
-    def template_1(self, query:str, response:str, s_best_contexts:list, elapsed_time:str=""):
+    def template_web_search(self, query:str, response:str, s_best_contexts:list, elapsed_time:str=""):
         assert query, f'query is empty'
         assert response, f'response is empty'
     
@@ -118,7 +118,7 @@ class Callback_Template:
         return template
     #---------------------------------------------------------------------------------    
     # 채팅    
-    def template_2(self, query:str, response:str, elapsed_time:str=""):
+    def template_chatting(self, query:str, response:str, elapsed_time:str=""):
     
         assert query, f'query is empty'
         assert response, f'response is empty'
@@ -188,12 +188,15 @@ class Callback_Template:
         return template
     #---------------------------------------------------------------------------------    
     # URL 요약    
-    def template_5(self, query:str, response:str, elapsed_time:str=""):
+    def template_url_summarize(self, query:str, response:str, elapsed_time:str=""):
         assert query, f'query is empty'
         assert response, f'response is empty'
      
-        if len(response) > 330: # 응답 길이가 너무 크면 simpletext로 처리함          
-            text = f"💫{query}\n\n(time:{str(elapsed_time)})\n{response}"
+        if len(response) > 330: # 응답 길이가 너무 크면 simpletext로 처리함    
+            if len(query) > 32:
+                text = f"💫{query[:30]}..\n\n(time:{str(elapsed_time)})\n{response}" 
+            else:
+                text = f"💫{query}\n\n(time:{str(elapsed_time)})\n{response}"
             template = {
                 "version": "2.0",
                 "template": {
@@ -214,13 +217,17 @@ class Callback_Template:
                 }
             }
         else:   
+            if len(query) > 32:
+                title = f'💫{query[:30]}..'
+            else:
+                title = f'💫{query}'
             template = {
                 "version": "2.0",
                 "template": {
                     "outputs": [
                         {
                             "textCard": {
-                                "title": '💫' + query,
+                                "title": title,
                                 "description": '(time:' + str(elapsed_time) + ')\n' + response
                             }
                         }
@@ -247,7 +254,7 @@ class Callback_Template:
         return template
     #---------------------------------------------------------------------------------        
     #이미지 OCR  
-    def template_6(self, query:str, response:str, vision_error:int, vision_url:str, elapsed_time:str=""):
+    def template_ocr(self, query:str, response:str, vision_error:int, vision_url:str, elapsed_time:str=""):
     
         assert query, f'query is empty'
         assert response, f'response is empty'
@@ -269,7 +276,7 @@ class Callback_Template:
                         {
                             "action": "message",
                             "label": "이미지내용요약..",
-                            "messageText": '!'+response
+                            "messageText": '!이미지 내용 요약'
                         }
                     ]
                 }
@@ -320,7 +327,7 @@ class Callback_Template:
         return template
     #---------------------------------------------------------------------------------    
     # 이미지OCR 내용 요약(user_mode==7) 인 경우   
-    def template_7(self, query:str, response:str, elapsed_time:str=""):
+    def template_ocr_summarize(self, query:str, response:str, elapsed_time:str=""):
         assert query, f'query is empty'
         assert response, f'response is empty'
          
@@ -365,7 +372,7 @@ class Callback_Template:
         return template
     #---------------------------------------------------------------------------------    
     # 돌발퀴즈인 경우
-    def template_8(self, query:str, response:str, elapsed_time:str=""):
+    def template_quiz(self, query:str, response:str, elapsed_time:str=""):
         assert query, f'query is empty'
         assert response, f'response is empty'
          
@@ -635,7 +642,23 @@ class Callback_Template:
 
         return template
     #---------------------------------------------------------------------------------  
-   
+    # 유사한 쿼리 quickReplies 추가하기 위한 코드 
+    def similar_query(self, prequery_docs:list, template:dict):
+        for idx, pdocs in enumerate(prequery_docs):
+            if idx == 0:
+                continue
+                
+            if prequery_docs[idx]['query'] and prequery_docs[1]['score']:            
+                prequery_score = prequery_docs[idx]['score']
+                if prequery_score > 1.60:  # 1.60 이상일때만 유사한 질문을 보여줌
+                    additional_structure = {
+                        "messageText": prequery_docs[idx]['query'],
+                        "action": "message",
+                        "label": f"{prequery_docs[idx]['query']}({self.get_es_format_score(prequery_score)}%)"
+                    }    
+                    template["template"]["quickReplies"].append(additional_structure)
+                    
+        return template
     
         
     

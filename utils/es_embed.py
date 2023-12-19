@@ -38,10 +38,10 @@ def create_index(es, index_file_path:str, index_name:str, create:bool = True):
         with open(index_file_path) as index_file:
             source = index_file.read().strip()
             count += 1
-            print(f'{count}:{source}') # 인덱스 구조 출력
+            #print(f'{count}:{source}') # 인덱스 구조 출력
             es.indices.create(index=index_name, body=source)
             
-        print(f'new create index=>index_file:{index_file_path}, index_name:{index_name}')
+        #print(f'new create index=>index_file:{index_file_path}, index_name:{index_name}')
 #---------------------------------------------------------------------------
      
 #------------------------------------------------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ def index_data(es, df_contexts, doc_sentences:list,
     for i, sentences in enumerate(tqdm(doc_sentences)):
         embeddings = embedding(sentences, bi_encoder, float_type)
         if i < 3:
-            print(f'[{i}] sentences-------------------')
+            #print(f'[{i}] sentences-------------------')
             if len(sentences) > 5:
                 print(sentences[:5])
             else:

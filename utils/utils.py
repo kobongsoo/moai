@@ -90,12 +90,11 @@ class MyUtils:
             with open(log_fullpath, 'a') as log:
                 # 현재 날짜와 시간 가져오기
                 current_time = datetime.now(korea_tz).strftime('%Y-%m-%d %H:%M:%S')
-                print(f"[{current_time}]{message}\n")
+                #print(f"[{current_time}]{message}\n")
                 log.write(f"[{current_time}]{message}\n")
         except Exception as e:
             print(f"An error occurred while log_message: {e}")
         
-
 
     #########################################################################################
     # seed 설정

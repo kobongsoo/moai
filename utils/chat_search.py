@@ -69,7 +69,7 @@ def chat_search(settings:dict, esindex:str, query:str,
     assert es_url, f'es_url is empty'
     assert gpt_model, f'gpt_model is empty'
 
-    print(f'\t==>chat_search:{esindex}, query:{query}, search_size:{search_size}, es_url:{es_url}, gpt_model:{gpt_model}')
+    #print(f'\t==>chat_search:{esindex}, query:{query}, search_size:{search_size}, es_url:{es_url}, gpt_model:{gpt_model}')
     
     docs = []
     response:str = '회사 자료에서는 질문에 답을 찾지 못했습니다.\n질문을 다르게 해보세요.'
@@ -102,7 +102,7 @@ def chat_search(settings:dict, esindex:str, query:str,
         if len(embed_context) < 2:
             bFind_docs = False
             
-    print(f'\t==>chat_search:prompt:{prompt}, bFind_docs:{bFind_docs}')
+    #print(f'\t==>chat_search:prompt:{prompt}, bFind_docs:{bFind_docs}')
   
     # bFind_docs == True일때만 쿼리함.
     if bFind_docs == True or checkdocs == False:
@@ -142,7 +142,7 @@ def chat_search(settings:dict, esindex:str, query:str,
     else:
         answer = response
         
-    print(f'\t==>chat_search:answer:{answer}\n')
+    #print(f'\t==>chat_search:answer:{answer}\n')
     return query, answer, embed_context
     
     

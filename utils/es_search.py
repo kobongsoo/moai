@@ -182,8 +182,8 @@ def es_search_uids(es, esindex:str, uid_min_score:int, size:int=10, data=None):
     response = None
     response = es.search(index=esindex, body=body)
     
-    print(f'=>후보군uid_min_score:{uid_min_score}')
-    print(f'=>후보군 list:{response}\n')
+    #print(f'=>후보군uid_min_score:{uid_min_score}')
+    #print(f'=>후보군 list:{response}\n')
     
     rfilename = []
     count = 0
@@ -296,7 +296,7 @@ def es_embed_query(settings:dict, esindex:str, query:str,
 
     # 5. 결과 리턴
     # - 쿼리 응답 결과값에서 _id, _score, _source 등을 뽑아내고 내림차순 정렬후 결과값 리턴
-    print(f'=>본문검색결과\n{response}\n')
+    #print(f'=>본문검색결과\n{response}\n')
     
     rfilename = []
     count = 0

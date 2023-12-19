@@ -23,8 +23,5 @@ from .sqlitedb import *
 
 from .web_scraping import *
 from .google_vision import *
-
-from .kakao_template import *
-from .quiz_kakao_template import *
 from .parser import *
 
