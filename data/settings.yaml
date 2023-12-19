@@ -11,7 +11,7 @@ E_METHOD: 0             # 임베딩 방식 (0=문장클러스터링, 1=문장평
 E_FLOAT_TYPE: 'float16' # 임베딩 출력 벡터 타입('float32', 'float16')
   
 # ES 관련 전역 변수
-ES_URL: 'http://:9200/'  # ES 서버 주소
+ES_URL: 'http://x.x.x.x/'  # ES 서버 주소
   
 # 인덱스 파일 경로 => **인덱싱 1개만 할거면 아래 Q_METHOD=2로 변경해야 함. ** 인덱싱 계수에 따라 NUM_CLUSTERS 값도 변경해야함.
 ES_INDEX_FILE: './data/mpower10u_128d_10.json'  # './data/mpower10u_768d_1.json'  
@@ -22,7 +22,8 @@ ES_Q_METHOD: 0     # 검색시 ES 스크립트 어떤형식으로 만들지.(0=�
 ES_BATCH_SIZE: 20  # 배치 사이즈 = 20이면 입력된 docs이 20개 이상이면, 최대 20개씩 ES에 인덱싱함.
 ES_SEARCH_MIN_SCORE: 0.1   # 5개 벡터일때는 0.1이하면 제거,  1개 벡터일때는 0.95 스코어 이하면 제거
 ES_UID_MIN_SCORE: 11.0 # 후보군 검색 스코어 xx 이하면 제거 => 안녕하세요 검색하면 1.1 정도 검색됨(벡터 1개일때 =>5.0), 클러스터링10개 일때=>11.0
-  
+ES_SEARCH_DOC_NUM: 4  # 본문검색시 검색할 계수
+
 # 검색할때 ES 벡터 크기 값(임의이 값지정) =>벡터의 크기는 각 구성 요소의 제곱 합의 제곱근으로 정의된다.. 
 # 예를 들어, 벡터 [1, 2, 3]의 크기는 sqrt(1^2 + 2^2 + 3^2) 즉, 3.7416이 된다.
 # 클수록 -> 스코어는 작아짐, 작을수록 -> 스코어 커짐.
@@ -41,17 +42,19 @@ REMOVE_DUPLICATION: False  # 중복된 문장 제거(*중복된 문장 제거 �
 SYSTEM_PROMPT: "" # "답은 2줄로 요약해주세요."           # 시스템 프롬프트
 PROMPT_CONTEXT: '{context}\n\nQ:{query}?. A:'   # 내용(컨텍스트)이 있을때 내용에 대해 질문할때 프롬프트
 PROMPT_NO_CONTEXT: 'Q:{query}?. A:'             # 일반 질문 프롬프트 (예: 목록만들고 설명해 주세요. )
-PROMPT_SUMMARIZE: 'Q: 위 내용을 문단별로 정리 해줘.'
+PROMPT_URL_SUMMARIZE: 'Q: 내용을 요약해줘.'
+PROMPT_OCR_SUMMARIZE: 'Q:위 내용을 알기쉽게 정리해 주세요.'
 PROMPT_QUIZ: '{context}\n\nQ: 위 내용을 가지고 서로 다른 문제 퀴즈 {quiz_create_num}개 만들어줘.\n먼저 문제를 만드는데 [문제] 형식으로 만들어줘.\n문제 다음에 답은 1,2,3번 3개중에 선택할수 있도록해 줘.\답 다음에는 정답을 표시하고 [정답]식으로 만들어줘.\n정답 뒤에는 [설명]식으로 정답인 이유를 설명해줘.'
 
 GPT_TOKEN: 'sk-'           # openai key
-GPT_MODEL: "gpt-3.5-turbo-1106" #모델 종류 : text-davinci-003, gpt-3.5-turbo, gpt-4, gpt-3.5-turbo-1106
+GPT_MODEL: "gpt-3.5-turbo-1106" # 모델 종류 : text-davinci-003, gpt-3.5-turbo, gpt-4, gpt-3.5-turbo-1106
+CHATTING_ASSISTANCE_LEN: 4      # 채팅할때 이전 몇개까지 대화내용 저장해 둘지 설정
 
 # 외부용 도메인 및 IP 입력해야함
 API_SERVER_URL: "https://"  # 뒤에는 / 붙이면 안됨.
 
-# 검색 타입 (0=네이버 검색 / 1= 구글검색)
-WEB_SEARCH_TYPE: 1
+# 웹 url 스크래핑 할때 최대 길이  (webscraping 에서 최대값은 6000 이므로 6000보다 작게 설정해야함)
+SCRAPING_WEB_MAX_LEN: 4000
 
 # 네이버 검색 API 이용
 NAVER_CLIENT_ID: ""
