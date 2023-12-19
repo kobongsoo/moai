@@ -23,7 +23,12 @@ def get_user_mode(usermode_dict:dict, instance:dict):
         user_mode = 0
         
     # 쿼리가 url 이면 사용자 모드는 5(URL 요약)로 설정
-    if webscraping.is_url(query) == True and query_format == "":
+    if prefix_query == '?':
+        url_query = query[1:]
+    else:
+        url_query = query
+        
+    if webscraping.is_url(url_query) == True and query_format == "":
         user_mode = 5    
         
     # 입력 format이 image 혹은  이미지에서 글자다시 검출인경우(prefix_query == '@').. 사용자 모드는 6(이미지 OCR)로 설정
