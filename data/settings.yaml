@@ -49,6 +49,10 @@ PROMPT_QUIZ: '{context}\n\nQ: 위 내용을 가지고 서로 다른 문제 퀴�
 GPT_TOKEN: 'sk-'           # openai key
 GPT_MODEL: "gpt-3.5-turbo-1106" # 모델 종류 : text-davinci-003, gpt-3.5-turbo, gpt-4, gpt-3.5-turbo-1106
 CHATTING_ASSISTANCE_LEN: 4      # 채팅할때 이전 몇개까지 대화내용 저장해 둘지 설정
+GPT_MAX_TOKENS: 1024 # 토큰 수  
+GPT_TEMPERATURE: 1.0 # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+GPT_TOP_P: 0.5 # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
+GTP_STREAM: True
 
 # 외부용 도메인 및 IP 입력해야함
 API_SERVER_URL: "https://"  # 뒤에는 / 붙이면 안됨.

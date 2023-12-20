@@ -314,7 +314,7 @@ async def chabot(kakaoDict: Dict):
     check_res = chatbot_check(kakaoDict=kakaoDict, instance=global_instance)
     if check_res['error'] != 0:
         if len(check_res['template']) > 0:
-            return JSONResponse(content=res['template'])
+            return JSONResponse(content=check_res['template'])
         return
     #----------------------------------------
     # quiz 처리

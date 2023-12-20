@@ -16,7 +16,8 @@ from functools import lru_cache  # 캐싱
 # => 아래 1번 함수와 차이점은 timeout(초)를 설정할수 있음.
 #-----------------------------------------
 def generate_text_davinci(gpt_model:str, prompt:str,  
-                          timeout:int=20, stream:bool=False):
+                        timeout:int=20, stream:bool=False,
+                        max_tokens:int=1024, temperature:float=0.5, top_p:float=0.1):
     
     error = 0
     answer:str = ""
@@ -25,10 +26,10 @@ def generate_text_davinci(gpt_model:str, prompt:str,
     data = {
         'model': gpt_model,
         'prompt': prompt,
-        'max_tokens': 1024,
-        'temperature':1,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+        'max_tokens': max_tokens,
+        'temperature': temperature,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
         'stream': stream,
-        #'top_p': 0.1,      # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
+        'top_p': top_p,      # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
         #'frequency_penalty':1, # 일반적으로 나오지 않는 단어를 억제하는 정도
         #'presence_penalty': 0.5 # 동일한 단어나 구문이 반복되는 것을 억제하는 정도
     }
@@ -83,7 +84,8 @@ def generate_text_davinci(gpt_model:str, prompt:str,
 # => 아래 1번 함수와 차이점은 timeout(초)를 설정할수 있음.
 #-----------------------------------------
 def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="", 
-                       assistants:list=[], timeout:int=20, stream:bool=False):
+                       assistants:list=[], timeout:int=20, stream:bool=False,
+                       max_tokens:int=1024, temperature:float=0.5, top_p:float=0.1):
     
     error = 0
     answer:str = ""
@@ -106,10 +108,10 @@ def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="",
     data = {
         'model': gpt_model,
         'messages': messages,
-        'max_tokens': 1024,
-        'temperature':1,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+        'max_tokens': max_tokens,
+        'temperature': temperature,# temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
         'stream': stream,
-        #'top_p': 0.1,      # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
+        'top_p': top_p,      # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
         #'frequency_penalty':1, # 일반적으로 나오지 않는 단어를 억제하는 정도
         #'presence_penalty': 0.5 # 동일한 단어나 구문이 반복되는 것을 억제하는 정도
     }
@@ -164,7 +166,8 @@ def generate_text_GPT2(gpt_model:str, prompt:str, system_prompt:str="",
 # 캐싱을 위한 데코레이터 설정
 #@lru_cache(maxsize=256)
 def generate_text_GPT(gpt_model:str, prompt:str, system_prompt:str="",
-                     assistants:list=[], stream:bool=False):
+                     assistants:list=[], stream:bool=False,
+                     max_tokens:int=1024, temperature:float=0.5, top_p:float=0.1):
     
     error = 0
     answer:str = ""
@@ -193,10 +196,10 @@ def generate_text_GPT(gpt_model:str, prompt:str, system_prompt:str="",
         response = openai.ChatCompletion.create(
             model=gpt_model,
             messages=messages,  
-            max_tokens=1024, # 토큰 수 
-            temperature=1,  # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+            max_tokens=max_tokens, # 토큰 수 
+            temperature=temperature,  # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
             stream=stream,
-            #top_p=0.1, # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
+            top_p=top_p, # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
             #frequency_penalty=1, # 일반적으로 나오지 않는 단어를 억제하는 정도
             #presence_penalty=0.5 # 동일한 단어나 구문이 반복되는 것을 억제하는 정도
             #stop=["다.","다!"] # . 나오면 중단

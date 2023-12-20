@@ -14,7 +14,12 @@ def call_chatting(settings:dict, data:dict, instance:dict):
     
     gpt_model:str = settings['GPT_MODEL']    
     system_prompt = settings['SYSTEM_PROMPT']
-    
+
+    max_tokens = settings.get('GPT_MAX_TOKENS', 1024)
+    temperature = settings.get('GPT_TEMPERATURE', 1.0)
+    top_p = settings.get('GPT_TOP_P', 0.1)
+    stream = settings.get('GTP_STREAM', False)
+
     callbackurl = data['callbackurl']
     prompt = data['prompt']
     query = data['query']
@@ -29,7 +34,7 @@ def call_chatting(settings:dict, data:dict, instance:dict):
     id_manager = instance['id_manager']
 
     myutils.log_message(f"-" * 50)
-    myutils.log_message(f"\t[call_chatting][start]")
+    myutils.log_message(f"\t[call_chatting][start]=>max_token:{max_tokens},temperature:{temperature},top_p:{top_p},stream:{stream}")
     
     start_time = time.time()
 
@@ -45,10 +50,13 @@ def call_chatting(settings:dict, data:dict, instance:dict):
                 if preanswer['preanswer']:
                     preanswer_list.append(preanswer['preanswer'])
                     
+        #timeout=20초면 2번 돌게 되므로 총 40초 대기함
         response, status = generate_text_GPT2(gpt_model=gpt_model, prompt=input_prompt, system_prompt=system_prompt, 
-                                              assistants=preanswer_list, stream=True, timeout=20) #timeout=20초면 2번 돌게 되므로 총 40초 대기함
+                                              assistants=preanswer_list, stream=stream, timeout=20,
+                                              max_tokens=max_tokens, temperature=temperature, top_p=top_p) 
     else:
-        response, status = generate_text_davinci(gpt_model=gpt_model, prompt=input_prompt, stream=True, timeout=20)
+        response, status = generate_text_davinci(gpt_model=gpt_model, prompt=input_prompt, stream=stream, timeout=20,
+                                                 max_tokens=max_tokens, temperature=temperature, top_p=top_p)
 
     # GPT text 생성 성공이면=>질문과 답변을 저정해둠.
     if status == 0:
