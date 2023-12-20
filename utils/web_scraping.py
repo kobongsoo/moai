@@ -10,7 +10,7 @@ class WebScraping:
     
     def __init__(self, scraping_web_max_len:int=4000):
         assert scraping_web_max_len > 0, f'scraping_web_max_len is < 0'
-        scraping_web_max_len = scraping_web_max_len
+        self.scraping_web_max_len = scraping_web_max_len
         return
     
     def __del__(self):
