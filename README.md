@@ -12,6 +12,7 @@
 4. 네이버나 구글을 선택해서 **웹검색 내용을 요약**해 보여 줍니다.
 5. **회사문서내용을 본문검색** 할수 있습니다.
 6. **AI와 질문을 이어가면서 채팅**을 할 수 있습니다.
+7. **돌발퀴즈** 도 할 수 있습니다.
 
 ## 서비스 구축 방법
 ### 1. 외부 URL 
@@ -86,6 +87,7 @@ GOOGLE_SEARCH_ENGINE_ID: 구글 검색 엔진 id => 검색엔진 만들기: http
 
 #### 4) 아래처럼 moai-compose.yml 을 만들고 compose로 실행
 - docker compose -p m -f ./moai-compose.yml up -d
+- 참고: [도커허브](https://hub.docker.com/repository/docker/bong9431/moai/general)
 ```
 # moai-compose.yml file
 version: '1.0'
@@ -115,7 +117,7 @@ services:
       - es_network
 
   moai:
-      image: bong9431/moai:0.9
+      image: bong9431/moai:latest
       restart: always
       depends_on:
         - elasticsearch
@@ -144,6 +146,6 @@ networks:
 |[papago_test](https://github.com/kobongsoo/moai/blob/master/papago_test.ipynb)|네이버 파파고 테스트 예제|1일 10,000자|
 |[sqllitedb_test](https://github.com/kobongsoo/moai/blob/master/sqllitedb_test.ipynb)|sqlite 테스트 예제||
 |[webscraping_test](https://github.com/kobongsoo/moai/blob/master/webscraping_test.ipynb)|웹스크래핑 예제||
-
+|[parser_test](https://github.com/kobongsoo/moai/blob/master/parser_test.ipynb)|돌발퀴즈 문자열 파싱하는 예제||
 
 
