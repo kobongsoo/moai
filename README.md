@@ -136,7 +136,7 @@ networks:
 ```
 ## 모아이 코드 수정하기
 - 모아이 코드를 수정하려면 여려 패키지를 설치해야 하므로, 여기서는 moai docker 이미지를 jupyterlab 실행할수 있는 이미지로 만들고 수정하는 방법을 설명한다.
-### 1. Dockerfile 생성.
+#### 1. Dockerfile 생성.
 - 아래처럼 Dockerfile을 만들고, docker 이미지를 만든다. 
 ```
 #base image
@@ -155,24 +155,29 @@ WORKDIR /moai
 #cmd
 CMD jupyter lab --ip=0.0.0.0 --port=9999 --allow-root
 ```
-### 2. Docker 이미지 생성
+#### 2. Docker 이미지 생성
 - 아래처럼 Dockerfile을 실행해서 이미지를 만든다.
 ```
 docker build -t moai-jupyter:1.0 -f ./Dockerfile .
 ```
 
-### 3. Docker 이미지 실행
-- 9999 번 포트로 해서 docker 이미지 실행. moai 폴더 경로 입력
+#### 3. Docker 이미지 실행
+- 9999번 포트 지정해서 docker 이미지 실행. moai 폴더 경로 입력
 ```
-docker run -d --name mj -p 9999:9999 -v moai-jupyter:1.0
+docker run -d --name mj -p 9999:9999 moai-jupyter:1.0
 ```
-### 4. jupyterlab 접속 확인
+#### 4. jupyterlab 접속 확인
 - localhost:9999 로 웹에서 접속 확인. token은 아래처럼 확인해서 입력하면됨.
 ```
 docker logs mj
 
 [I 2024-02-15 01:13:49.257 ServerApp] http://4390649f6a60:9999/lab?token=9aa5e9a2b61770179ea8c2080fb0f9ab6f3b84bb754ca185
 [I 2024-02-15 01:13:49.257 ServerApp]     http://127.0.0.1:9999/lab?token=9aa5e9a2b61770179ea8c2080fb0f9ab6f3b84bb754ca185
+```
+#### 5. 이미지 생성
+- commit 명령어로 수정 후 새로운 이미지(예: moai-jupyter:1.1) 로 만든다.
+```
+docker commit mj moai-jupyter:1.1
 ```
 
 ## 참고소스
