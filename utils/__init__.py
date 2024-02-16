@@ -25,3 +25,5 @@ from .web_scraping import *
 from .google_vision import *
 from .parser import *
 
+from .kakao_karlo import *
+

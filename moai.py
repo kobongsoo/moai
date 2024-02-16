@@ -35,13 +35,15 @@ from utils import create_index, make_docs_df, get_sentences, quiz_parser
 from utils import load_embed_model, async_embedding, index_data, async_es_embed_query, async_es_embed_delete
 from utils import async_chat_search, remove_prequery, get_title_with_urllink, make_prompt
 from utils import generate_text_GPT2, generate_text_davinci, Google_Vision
-from utils import IdManager, NaverSearchAPI, GoogleSearchAPI, ES_Embed_Text, MyUtils, SqliteDB, WebScraping
+from utils import IdManager, NaverSearchAPI, GoogleSearchAPI, ES_Embed_Text, MyUtils, SqliteDB, WebScraping, KarloAPI
 
-from callback import call_text_search, call_web_search, call_chatting, call_url_summarize, call_ocr, call_ocr_summarize, call_quiz
+from callback import call_text_search, call_web_search, call_chatting, call_url_summarize, call_ocr, call_ocr_summarize, call_quiz, call_paint
 from chatbot import chatbot_check, get_quiz_template, get_user_mode, get_prequery_search_template
-from chatbot import chatbot_text_search, chatbot_web_search, chatbot_chatting, chatbot_url_summarize, chatbot_ocr, chatbot_ocr_summarize, chatbot_quiz
+from chatbot import chatbot_text_search, chatbot_web_search, chatbot_chatting, chatbot_url_summarize, chatbot_ocr, chatbot_ocr_summarize, chatbot_quiz, chatbot_paint
 
 from kakao_template import Callback_Template, Quiz_Callback_Template
+
+from googletrans import Translator
 
 # os가 윈도우면 from eunjeon import Mecab 
 if platform.system() == 'Windows':
@@ -108,10 +110,18 @@ print(f'*google_vision: {service_account_jsonfile_path}')
 callback_template = Callback_Template(api_server_url=settings['API_SERVER_URL'], es_index_name=settings['ES_INDEX_NAME'], qmethod=settings['ES_Q_METHOD'])
 quiz_callback_template = Quiz_Callback_Template() # 퀴즈콜백템플릿
 
+# 번역 
+translator = Translator()
+
+# Karlo (이미지생성)
+kakako_rest_api_key = settings['KAKAO_REST_API_KEY']
+karlo = KarloAPI(rest_api_key=kakako_rest_api_key)
+
 # global 인스턴스 dict로 정의
 global_instance:dict = {'myutils': myutils, 'id_manager': id_manager, 'userdb': userdb, 'naver_api': naver_api, 'google_api': google_api, 
                         'webscraping': webscraping, 'google_vision': google_vision, 'prequery_embed': prequery_embed,
-                        'callback_template': callback_template, 'quiz_callback_template': quiz_callback_template}
+                        'callback_template': callback_template, 'quiz_callback_template': quiz_callback_template, 
+                        'translator': translator, 'karlo': karlo}
 
 print(f'='*80)
 #---------------------------------------------------------------------------
@@ -260,6 +270,9 @@ async def call_callback(settings:dict, data:dict):
         elif user_mode == 2: # 채팅
             template = call_chatting(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
+        elif user_mode == 3: # 이미지 생성
+            template = call_paint(settings=settings, data=data, instance=global_instance)
+        #-------------------------------------------------------------------      
         elif user_mode == 5: # URL 요약
             template = call_url_summarize(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
@@ -364,6 +377,11 @@ async def chabot(kakaoDict: Dict):
         chatting_dict:dict = {'userid': user_id, 'query': query}
         chatbot_chatting(settings=settings, data=chatting_dict, instance=global_instance, result=result)
     #--------------------------------------
+    # 3=이미지 생성
+    if user_mode == 3:
+        paint_dict:dict = {'userid': user_id, 'query': query}
+        chatbot_paint(settings=settings, data=paint_dict, instance=global_instance, result=result)
+    #--------------------------------------    
     # 5=URL 요약
     if user_mode == 5:
         url_summarize_dict:dict = {'userid': user_id, 'query': query}
@@ -428,6 +446,7 @@ def set_userinfo(content, user_mode:int):
     return 0
  
 #-----------------------------------------------------------
+# 본문검색
 @app.post("/searchdoc")
 async def searchdoc(content: Dict):
     if set_userinfo(content=content["userRequest"], user_mode=0) != 0:
@@ -437,6 +456,7 @@ async def searchdoc(content: Dict):
     json_response = JSONResponse(content=template)
     return json_response
 #----------------------------------------------------------------------
+# 웹검색
 @app.post("/searchweb")
 async def searchweb(content: Dict):
     if set_userinfo(content=content["userRequest"], user_mode=1) != 0:
@@ -447,6 +467,7 @@ async def searchweb(content: Dict):
     return json_response
 
 #----------------------------------------------------------------------
+# 채팅하기
 @app.post("/searchai")
 async def chatting(content: Dict):
     if set_userinfo(content=content["userRequest"], user_mode=2) != 0:
@@ -456,6 +477,17 @@ async def chatting(content: Dict):
     json_response = JSONResponse(content=template)    
     return json_response
 #----------------------------------------------------------------------
+# 이미지생성 클릭릭
+@app.post("/paint")
+async def painting(content: Dict):
+    if set_userinfo(content=content["userRequest"], user_mode=3) != 0:
+        return
+       
+    template = callback_template.paint()
+    json_response = JSONResponse(content=template)    
+    return json_response
+#----------------------------------------------------------------------  
+
 # setting 관련
 @app.post("/setting/save")
 async def setting_save(request: Request): 
@@ -502,7 +534,7 @@ async def setting(content: Dict):
     search_site:str = "naver" # 웹검색 사이트 (기본은 naver)
     pre_query:int=1   # 예전 유사 질문 검색(기본=1(검색함))
     pre_query_str:str = '검색함'
-    user_mode_list:list = ['회사본문검색(1)','웹검색(2)','AI응답모드(3)']   
+    user_mode_list:list = ['회사본문검색(0)','웹검색(1)','채팅하기(2)', '이미지생성(3)']   
     user_mode_str:str = "없음"
     
     setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site를 얻어옴

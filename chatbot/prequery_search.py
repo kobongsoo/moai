@@ -24,7 +24,7 @@ def get_prequery_search_template(prequery_dict:dict, instance:dict):
         prequery_search = False
 
     # 이전 질문 검색(회사본문검색=0, 웹문서검색=1) 일때만 
-    if prequery_search == True and user_mode < 5 and set_prequery == 1: 
+    if prequery_search == True and user_mode < 3 and set_prequery == 1: 
         prequery_docs = prequery_embed.embed_search(query=query, classification=prequery_embed_class[user_mode])
         
         if len(prequery_docs) > 0:

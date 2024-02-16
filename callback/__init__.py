@@ -5,5 +5,6 @@ from .call_url_summarize import *
 from .call_ocr import *
 from .call_ocr_summarize import *
 from .call_quiz import *
+from .call_paint import *
 
 

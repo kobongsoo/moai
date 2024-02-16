@@ -68,3 +68,7 @@ NAVER_CLINET_SECRET: ""
 # => https://programmablesearchengine.google.com/controlpanel/all
 GOOGLE_API_KEY: ""
 GOOGLE_SEARCH_ENGINE_ID: ""
+
+# KAKAO REST API KEY
+# => https://developers.kakao.com/console/app/
+KAKAO_REST_API_KEY: ""

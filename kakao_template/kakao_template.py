@@ -416,6 +416,70 @@ class Callback_Template:
             
         return template
     #---------------------------------------------------------------------------------
+    # 이미지 생성
+    def template_paint(self, query:str, image_url:str, elapsed_time:str=""):
+        
+        title = f'time:{elapsed_time}'
+        descript = query
+        url = image_url
+
+        if url:
+            template = {
+                "version": "2.0",
+                "template": {
+                    "outputs": [
+                        {
+                            "simpleImage": {
+                                "imageUrl": url,
+                                "altText": query
+                            }
+                        }
+                    ],
+                    "quickReplies": [
+                        {
+                            "action": "message",
+                            "label": "다시생성..",
+                            "messageText": query
+                        }
+                    ]
+                }
+            }
+            '''
+            template = {
+                "version": "2.0",
+                "template": {
+                    "outputs": [
+                        {
+                        "basicCard": {
+                            "title": title,
+                            "description": descript,
+                            "thumbnail": {
+                                "imageUrl": image_url
+                            }
+                         }
+                        }
+                      ]
+                   }
+                }
+            '''
+        else:
+            text = f'📛이미지 생성 실패!!\n{title}\n{descript}'
+            template = {
+                "version": "2.0",
+                "useCallback": False,
+                "template": {
+                    "outputs": [
+                        {
+                            "simpleText": {
+                                "text": text
+                            }
+                        }
+                    ]
+                }
+            }
+    
+        return template
+    #---------------------------------------------------------------------------------
     # 본문검색 클릭시 
     def searchdoc(self):
         
@@ -524,6 +588,44 @@ class Callback_Template:
                           "action":  "message",
                           "label": "목록들을 설명해줘",
                           "messageText": "목록들을 설명해줘"
+                        }
+                      ]
+                     }
+                    }
+                  ]
+               }
+            }
+            
+    
+        return template
+    #--------------------------------------------------------------------------------- 
+    # 이미지 생성 클릭시
+    def paint(self):
+        
+        title = "🎨이미지 생성\n내용을 입력하면 이미지를 생성합니다."
+        descript = '''자세하게 내용을 설명해 주세요.
+        '''
+        template = {
+            "version": "2.0",
+            "template": {
+                "outputs": [
+                    {
+                    "basicCard": {
+                        "title": title,
+                        "description": descript,
+                        "thumbnail": {
+                            "imageUrl": "http://k.kakaocdn.net/dn/buQ8HX/btsESM9TRDn/pIYcA8nKhKbcTMEuTyLF81/2x1.jpg"
+                        },
+                        "buttons": [
+                        {
+                          "action":  "message",
+                          "label": "귀여운 표정 고양이 얼글",
+                          "messageText": "귀여운 표정 고양이 얼글"
+                        },
+                        {
+                          "action":  "message",
+                          "label": "바다에 떠있는 하얀 돗단배",
+                          "messageText": "바다에 떠있는 하얀 돗단배"
                         }
                       ]
                      }
