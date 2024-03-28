@@ -9,20 +9,25 @@ E_POLLING_MODE: 'mean'  # 폴링모드*(mean, cls, max 중 1나)
 E_OUT_DIMENSION: 128    # 임베딩 모델 출력 차원(128, 768)
 E_METHOD: 0             # 임베딩 방식 (0=문장클러스터링, 1=문장평균임베딩, 2=문장임베딩)
 E_FLOAT_TYPE: 'float16' # 임베딩 출력 벡터 타입('float32', 'float16')
+ES_BATCH_SIZE: 20  # 배치 사이즈 = 20이면 입력된 docs이 20개 이상이면, 최대 20개씩 ES에 인덱싱함.
   
 # ES 관련 전역 변수
-ES_URL: 'http://x.x.x.x/'  # ES 서버 주소
+ES_URL: 'http://192.168.0.51:9200/'  # ES 서버 주소
   
 # 인덱스 파일 경로 => **인덱싱 1개만 할거면 아래 Q_METHOD=2로 변경해야 함. ** 인덱싱 계수에 따라 NUM_CLUSTERS 값도 변경해야함.
-ES_INDEX_FILE: './data/mpower10u_128d_10.json'  # './data/mpower10u_768d_1.json'  
+ES_INDEX_FILE: './data/mpower10u_128d_10.json'  # './data/mpower10u_768d_10.json'  
 ES_INDEX_NAME: 'qaindex_128_10'           # 회사본문검색 인덱스 명칭 
 ES_PREQUERY_INDEX_NAME: 'prequery_128' # 이전질문 인덱스 명칭
 
-ES_Q_METHOD: 0     # 검색시 ES 스크립트 어떤형식으로 만들지.(0=임베딩이 여러개일때 MAX(기본), 1=임베딩이 여러개일때 평균, 2=임베딩이1개일때)
-ES_BATCH_SIZE: 20  # 배치 사이즈 = 20이면 입력된 docs이 20개 이상이면, 최대 20개씩 ES에 인덱싱함.
-ES_SEARCH_MIN_SCORE: 0.1   # 5개 벡터일때는 0.1이하면 제거,  1개 벡터일때는 0.95 스코어 이하면 제거
-ES_UID_MIN_SCORE: 11.0 # 후보군 검색 스코어 xx 이하면 제거 => 안녕하세요 검색하면 1.1 정도 검색됨(벡터 1개일때 =>5.0), 클러스터링10개 일때=>11.0
-ES_SEARCH_DOC_NUM: 4  # 본문검색시 검색할 계수
+# 회사문서검색전 후보군 검색
+ES_UID_SEARCH: 0      # 입베딩 검색하기전 후보군 검색할지 안할지(1=검색함/0=검색안함)
+ES_UID_MIN_SCORE: 9.0 # 후보군 검색 스코어 xx 이하면 제거 => 안녕하세요 검색하면 1.1 정도 검색됨(벡터 1개일때 =>5.0), 클러스터링10개 일때=>11.0,
+ES_UID_SEARCH_LEN: 8  # 후보군 검색할 계수
+
+# 회사문서검색
+ES_Q_METHOD: 0       # 검색시 ES 스크립트 어떤형식으로 만들지.(0=임베딩이 여러개일때 MAX(기본), 1=임베딩이 여러개일때 평균, 2=임베딩이1개일때)
+ES_SEARCH_MIN_SCORE: 0.1   # 유사도가 해당 스코어 이하면 출력안함(*벡터가 다수일때 보통 0.5 설정하는게 좋음/*평균벡터 1개일때는 1.3 정도)
+ES_SEARCH_DOC_NUM: 4   # 임베딩검색시 검색할 계수(*후보군 검색을 하게되면 ES_UID_SEARCH_LEN 값보다는 작아야함)
 
 # 검색할때 ES 벡터 크기 값(임의이 값지정) =>벡터의 크기는 각 구성 요소의 제곱 합의 제곱근으로 정의된다.. 
 # 예를 들어, 벡터 [1, 2, 3]의 크기는 sqrt(1^2 + 2^2 + 3^2) 즉, 3.7416이 된다.
@@ -33,26 +38,27 @@ ES_SEARCH_VECTOR_MAG: 0.8
 NUM_CLUSTERS_VARIABLE: False  # **True이면 문장길이에 따라 클러스터링수를 다르게 함, False이면 클러스터링 계수가 고정.
 CLU_MODE: "kmeans"        # "kmeans" = k-평균 군집 분석, kmedoids =  k-대표값 군집 분석
 NUM_CLUSTERS: 10          # 클러스터링 계수 
-CLU_OUTMODE: "mean"       # 클러스터링후 출력벡터 정의(kmeans 일때 => mean=평균벡터 출력, max=최대값벡터출력 / kmedoids 일때=>mean=평균벡터, medoid=대표값벡터)
+CLU_OUTMODE: "mean"     # 클러스터링후 출력벡터 정의(kmeans 일때 => mean=평균벡터 출력, max=최대값벡터출력 / kmedoids 일때=>mean=평균벡터, medoid=대표값벡터)
 
 # 문장 전처리
 REMOVE_SENTENCE_LEN: 8     # 문장 길이가 8이하면 제거 
 REMOVE_DUPLICATION: False  # 중복된 문장 제거(*중복된 문장 제거 안할때 1%정도 정확도 좋음)
     
 SYSTEM_PROMPT: "" # "답은 2줄로 요약해주세요."           # 시스템 프롬프트
-PROMPT_CONTEXT: '{context}\n\nQ:{query}?. A:'   # 내용(컨텍스트)이 있을때 내용에 대해 질문할때 프롬프트
-PROMPT_NO_CONTEXT: 'Q:{query}?. A:'             # 일반 질문 프롬프트 (예: 목록만들고 설명해 주세요. )
+PROMPT_CONTEXT: '{context}\n\nQ:{query}?\nA:'   # 내용(컨텍스트)이 있을때 내용에 대해 질문할때 프롬프트
+PROMPT_NO_CONTEXT: 'Q:{query}?\nA:'             # 일반 질문 프롬프트 (예: 목록만들고 설명해 주세요. )
 PROMPT_URL_SUMMARIZE: 'Q: 내용을 요약해줘.'
 PROMPT_OCR_SUMMARIZE: 'Q:위 내용을 알기쉽게 정리해 주세요.'
 PROMPT_QUIZ: '{context}\n\nQ: 위 내용을 가지고 서로 다른 문제 퀴즈 {quiz_create_num}개 만들어줘.\n먼저 문제를 만드는데 [문제] 형식으로 만들어줘.\n문제 다음에 답은 1,2,3번 3개중에 선택할수 있도록해 줘.\답 다음에는 정답을 표시하고 [정답]식으로 만들어줘.\n정답 뒤에는 [설명]식으로 정답인 이유를 설명해줘.'
 
-GPT_TOKEN: 'sk-'           # openai key
-GPT_MODEL: "gpt-3.5-turbo-1106" # 모델 종류 : text-davinci-003, gpt-3.5-turbo, gpt-4, gpt-3.5-turbo-1106
+# GPT_TOKEN: 'sk-'           # openai key
+GPT_TOKEN: 'sk-'           # google 계정 openai key
+GPT_MODEL: "gpt-3.5-turbo-0125" # 모델 종류 : text-davinci-003, gpt-3.5-turbo, gpt-4, gpt-3.5-turbo-1106, gpt-3.5-turbo-0125
 CHATTING_ASSISTANCE_LEN: 4      # 채팅할때 이전 몇개까지 대화내용 저장해 둘지 설정
 GPT_MAX_TOKENS: 1024 # 토큰 수  
-GPT_TEMPERATURE: 1.0 # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
-GPT_TOP_P: 0.5 # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
-GTP_STREAM: True
+GPT_TEMPERATURE: 0.7 # temperature 0~2 범위 : 작을수록 정형화된 답변, 클수록 유연한 답변(2는 엉뚱한 답변을 하므로, 1.5정도가 좋은것 같음=기본값은=1)
+GPT_TOP_P: 0.2 # 기본값은 1 (0.1이라고 하면 10% 토큰들에서 출력 토큰들을 선택한다는 의미)
+GPT_STREAM: True
 
 # 외부용 도메인 및 IP 입력해야함
 API_SERVER_URL: "https://"  # 뒤에는 / 붙이면 안됨.
