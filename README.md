@@ -13,6 +13,7 @@
 5. **회사문서내용을 본문검색** 할수 있습니다.
 6. **AI와 질문을 이어가면서 채팅**을 할 수 있습니다.
 7. **돌발퀴즈** 도 할 수 있습니다.
+8. **Text을 입력해서 이미지를 생성** 할 수도 있습니다.(카카오 karlo api 이용)
 
 [참고] **bert모델은 github에 포함되지 않음**. (kpf-sbert-128d-v1 사용함.)
 
@@ -46,12 +47,14 @@ ngrok http 9000
 채팅스킬 : https://{ngrokurl}/searchai
 설명스킬 : https://{ngrokurlL}/info
 설정스킬 : https://{ngrokurl}/setting
+이미지만들기스킬 : https://{ngrokurl}/paint
 ```
-- 챗봇 > 시나리오 : 3개 블록 생성 하고 각 스킬을 연결한다.
+- 챗봇 > 시나리오 : 4개 블록 생성 하고 각 스킬을 연결한다.
 ```
 본문검색블록 <-> 본문검색스킬 연결
 웹문서검색블록 <-> 웹문서검색 스킬 연결
 채팅문서블록 <-> 채팅스킬 연결
+이미지만들기블록 <-> 이미지만들기스킬 연결
 ```
 <img width="711" alt="image" src="https://github.com/kobongsoo/moai/assets/93692701/3a58f16d-bba0-4b34-b4b4-d171169e9202">
 
