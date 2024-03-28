@@ -182,7 +182,7 @@ def es_search_uids(es, esindex:str, uid_min_score:int, size:int=10, data=None):
     response = None
     response = es.search(index=esindex, body=body)
     
-    #print(f'=>후보군uid_min_score:{uid_min_score}')
+    #print(f'=>후보군 uid_min_score:{uid_min_score}')
     #print(f'=>후보군 list:{response}\n')
     
     rfilename = []
@@ -196,13 +196,13 @@ def es_search_uids(es, esindex:str, uid_min_score:int, size:int=10, data=None):
         if tmp and tmp not in rfilename:
             rfilename.append(tmp)
             doc = {}  #dict 선언
-            
             score = hit["_score"]
             if score > uid_min_score:  # 6 이상일때만 스코어 계산
                 doc['rfile_name'] = hit["_source"]["rfile_name"]      # contextid 담음
                 doc['rfile_text'] = hit["_source"]["rfile_text"]      # text 담음.
                 doc['score'] = score
                 docs.append(doc)
+                print(f'score:{score}, text:{doc["rfile_text"]}\n')
                 count += 1
     
     uids = []
@@ -227,11 +227,16 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     
     #print(f'search_size: {search_size}')
     es_url = settings['ES_URL']
-    uid_min_score = settings['ES_UID_MIN_SCORE']
     vector_mgr = settings['ES_SEARCH_VECTOR_MAG']
     float_type = settings['E_FLOAT_TYPE']
     vector_num = settings['NUM_CLUSTERS']
-      
+
+    uid_search = settings['ES_UID_SEARCH'] # 입베딩 검색하기전 후보군 검색할지 안할지(1=검색함/0=검색안함)
+    uid_min_score = settings['ES_UID_MIN_SCORE']# 후보군 검색 스코어 xx이하면 제거 =>안녕하세요 검색하면 1.1정도 검색됨(벡터 1개일때 =>5.0),클러스터링10개 일때=>11.0
+    uid_search_len = settings['ES_UID_SEARCH_LEN'] # 후보군 검색할 계수
+
+    #print(f'uid_search: {uid_search}, uid_min_score: {uid_min_score}, uid_search_len:{uid_search_len}')
+
     # 1.elasticsearch 접속
     es = Elasticsearch(es_url)   
     
@@ -245,23 +250,27 @@ def es_embed_query(settings:dict, esindex:str, query:str,
         error = 'qmenthod is not variable'
     elif vector_num < 1:
         error = 'vector_num is not variable'
+    elif uid_search_len < 1:
+        error = 'uid_search_len is not variable'
         
     if error != 'success':
         return error, None
    
     #print(f'vector_num: {type(vector_num)}/{vector_num}')
 
-    # 후보군 목록이 없으면, es 일반검색 해서 후보군 리스트 뽑아냄.
-    docs = []
-    if uids == None:
-        #* es로 쿼리해서 후보군 추출.
-        data = {'rfile_text': query}
-        uids, docs = es_search_uids(es=es, esindex=esindex, uid_min_score=uid_min_score, size=10, data=data)
-        
-    #print(f'\t==>es_embed_query:uids:{uids}, qmethod: {qmethod}')
-    
-    if len(uids) < 1:
-        return error, docs # 쿼리,  rfilename, rfiletext, 스코어 리턴 
+    #  후보군 검색이 설정된 경우에 es 일반검색 해서 후보군 리스트 뽑아냄.(*후보군이 있으면 일반검색 하지 않음)
+    if uid_search == 1:        
+        docs = []
+        if uids == None:
+            print(f'[후보군 검색] Q:{query}')
+            
+            #* es로 쿼리해서 후보군 추출.
+            data = {'rfile_text': query}
+            uids, docs = es_search_uids(es=es, esindex=esindex, uid_min_score=uid_min_score, size=uid_search_len, data=data)
+            
+        #print(f'\t==>es_embed_query:uids:{uids}, qmethod: {qmethod}')
+        if len(uids) < 1:
+            return error, docs # 쿼리,  rfilename, rfiletext, 스코어 리턴 
     
     # 2. 검색 문장 embedding 후 벡터값 
     # 쿼리들에 대해 임베딩 값 구함

@@ -134,7 +134,8 @@ templates = Jinja2Templates(directory="template_files") # html 파일이 있는 
 #----------------------------------------------------------------------
 @app.get("/")
 async def root():
-    return { "MoI(모아이)":"카카오톡 연동 AI 모델", "1.임베딩모델": settings["E_MODEL_PATH"], "2.LLM모델": settings["GPT_MODEL"], "3.ES" : settings["ES_URL"]}
+    return { "MoI(모아이)":"모아이(MoAI)", "1.임베딩모델": settings["E_MODEL_PATH"], "2.LLM모델": settings["GPT_MODEL"], "3.ES" : settings["ES_URL"], 
+            "4.후보검색(1=함,0=안함)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"]}
 #----------------------------------------------------------------------
 # GET : es/{인덱스명}/docs 검색(비동기)
 # => http://127.0.0.1:9000/es/{인덱스}/docs?query=쿼리문장&search_size=5
@@ -145,7 +146,7 @@ async def root():
 async def search_documents(esindex:str, 
                      query: str = Query(..., min_length=1),  # ... 는 필수 입력 이고,min_length=1은 최소값이 1임.작으면 422 Unprocessable Entity 응답반환됨
                      search_size: int = Query(..., gt=0),    # ... 는 필수 입력 이고,gt=0은 0보다 커야 한다. 작으면 422 Unprocessable Entity 응답반환됨
-                     qmethod: int=2,                         # option: qmethod=0 혹은 1(0=max벡터 구하기, 1=평균벡터 구하기 (default=0))
+                     qmethod: int=2,                         # option: qmethod=0 혹은 1(0=max벡터 구하기, 1=평균벡터 구하기 (default=0))혹은 2
                      show: int=1                             # 0=dict 형태로 보여줌, 1=txt 형태로 보여줌.
                      ):                          
                     
