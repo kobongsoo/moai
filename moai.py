@@ -134,6 +134,7 @@ templates = Jinja2Templates(directory="template_files") # html 파일이 있는 
 #----------------------------------------------------------------------
 @app.get("/")
 async def root():
+    settings = myutils.get_options()
     return { "MoI(모아이)":"모아이(MoAI)", "1.임베딩모델": settings["E_MODEL_PATH"], "2.LLM모델": settings["GPT_MODEL"], "3.ES" : settings["ES_URL"], 
             "4.후보검색(1=함,0=안함)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"]}
 #----------------------------------------------------------------------
@@ -153,7 +154,8 @@ async def search_documents(esindex:str,
     error:str = 'success'
     query = query.strip()
     myutils.log_message(f'\n[info] get /es/{esindex}/docs start-----\nquery:{query}, search_size:{search_size}')
-    
+
+    settings = myutils.get_options()
     min_score = settings['ES_SEARCH_MIN_SCORE']
     
     try:
@@ -227,6 +229,8 @@ async def search_documents_uid(esindex:str,
     query = query.strip()
     uids = Data.uids 
     myutils.log_message(f'\n[info] post /es/{esindex}/docs/uids start-----\nquery:{query}, search_size:{search_size}, len(uids):{len(uids)}')
+
+    settings = myutils.get_options()
 
     try:
         # es로 임베딩 쿼리 실행
@@ -365,7 +369,12 @@ async def chabot(kakaoDict: Dict):
     if user_mode == 0:
         text_search_dict:dict = {'userid': user_id, 'query': query, 'bi_encoder': g_BI_ENCODER}
         chatbot_text_search(settings=settings, data=text_search_dict, instance=global_instance, result=result)
-        if result['error'] != 0:
+        # 1002=질문에 맞는 내용을 찾지 못한 경우 '질문에 맞는 내용을 찾지 못했습니다. 질문을 다르게 해 보세요.' 메시지만 띄워줌.(콜백호출안함)
+        if result['error'] == 1002:
+            json_response = JSONResponse(content=result['template'])
+            id_manager.remove_id_all(user_id) # id 제거
+            return json_response 
+        elif result['error'] != 0:
             return
     #--------------------------------------
     # 1=웹검색

@@ -51,9 +51,10 @@ def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict):
         id_manager.remove_id_all(user_id) # id 제거
         text = "⚠️질문에 맞는 내용을🔍찾지 못했습니다. 질문을 다르게 해 보세요."
         template = callback_template.simpletext_template(text = text)
+        result['error'] = 1002
     else:
         # 답변 설정
-        text = "🔍본문검색 완료. 답변 대기중.." 
+        text = "🔍회사문서검색 완료. 답변 대기중.." 
         template = callback_template.usecallback_template(text=text, usercallback=True)
 
     result['prompt'] = prompt

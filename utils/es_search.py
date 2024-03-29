@@ -202,8 +202,9 @@ def es_search_uids(es, esindex:str, uid_min_score:int, size:int=10, data=None):
                 doc['rfile_text'] = hit["_source"]["rfile_text"]      # text 담음.
                 doc['score'] = score
                 docs.append(doc)
-                print(f'score:{score}, text:{doc["rfile_text"]}\n')
                 count += 1
+                # 후보군 스코어와 text 출력해봄
+                #print(f'score:{score}, text:{doc["rfile_text"]}\n')
     
     uids = []
     for doc in docs:
@@ -235,7 +236,7 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     uid_min_score = settings['ES_UID_MIN_SCORE']# 후보군 검색 스코어 xx이하면 제거 =>안녕하세요 검색하면 1.1정도 검색됨(벡터 1개일때 =>5.0),클러스터링10개 일때=>11.0
     uid_search_len = settings['ES_UID_SEARCH_LEN'] # 후보군 검색할 계수
 
-    #print(f'uid_search: {uid_search}, uid_min_score: {uid_min_score}, uid_search_len:{uid_search_len}')
+    print(f'uid_search: {uid_search}, uid_min_score: {uid_min_score}, uid_search_len:{uid_search_len}')
 
     # 1.elasticsearch 접속
     es = Elasticsearch(es_url)   
@@ -262,7 +263,7 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     if uid_search == 1:        
         docs = []
         if uids == None:
-            print(f'[후보군 검색] Q:{query}')
+            #print(f'[후보군 검색] Q:{query}')
             
             #* es로 쿼리해서 후보군 추출.
             data = {'rfile_text': query}
