@@ -6,15 +6,17 @@ import time
 
 class Callback_Template:
     #---------------------------------------------------------------------------------    
-    def __init__(self, api_server_url:str, es_index_name:str, qmethod:str):
+    def __init__(self, api_server_url:str, es_index_name:str, qmethod:str, search_size:int=4):
         assert api_server_url, f'api_server_url is empty'
         assert es_index_name, f'es_index_name is empty'
         assert qmethod > -1, f'qmethod is wrong'
+        assert search_size > 0, f'search_size is wrong'
 
         self.api_server_url = api_server_url
         self.es_index_name = es_index_name
         self.qmethod = qmethod
         self.QUIZ_MAX_LEN = 100   # 숫자 이상인 경우에만 '돌발퀴즈..' 메뉴 보임
+        self.search_size = search_size
     #---------------------------------------------------------------------------------        
     def __del__(self):
         return
@@ -33,7 +35,7 @@ class Callback_Template:
         assert response, f'response is empty'
 
         # weburl = '10.10.4.10:9000/es/qaindex/docs?query='회사창립일은언제?'&search_size=3&qmethod=2&show=1
-        weblinkurl = f"{self.api_server_url}/es/{self.es_index_name}/docs?query={query}&search_size=4&qmethod={self.qmethod}&show=1"
+        weblinkurl = f"{self.api_server_url}/es/{self.es_index_name}/docs?query={query}&search_size={self.search_size}&qmethod={self.qmethod}&show=1"
         
         template = {
                     "version": "2.0",

@@ -107,7 +107,7 @@ google_vision = Google_Vision(service_account_jsonfile_path=service_account_json
 print(f'*google_vision: {service_account_jsonfile_path}')
 
 # 콜백 템플릿
-callback_template = Callback_Template(api_server_url=settings['API_SERVER_URL'], es_index_name=settings['ES_INDEX_NAME'], qmethod=settings['ES_Q_METHOD'])
+callback_template = Callback_Template(api_server_url=settings['API_SERVER_URL'], es_index_name=settings['ES_INDEX_NAME'], qmethod=settings['ES_Q_METHOD'], search_size=settings['ES_SEARCH_DOC_NUM'])
 quiz_callback_template = Quiz_Callback_Template() # 퀴즈콜백템플릿
 
 # 번역 
