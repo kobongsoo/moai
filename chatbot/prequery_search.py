@@ -22,11 +22,15 @@ def get_prequery_search_template(prequery_dict:dict, instance:dict):
     prequery_search = True   # True=이전질문 검색함.  
     if query[0] == '?' or query[0] == '!' or query[0] == '@':
         prequery_search = False
-
-    # 이전 질문 검색(회사본문검색=0, 웹문서검색=1) 일때만 
-    if prequery_search == True and user_mode < 3 and set_prequery == 1: 
-        prequery_docs = prequery_embed.embed_search(query=query, classification=prequery_embed_class[user_mode])
+    elif user_mode==3 or user_mode==4 or user_mode==5 or user_mode==6 or user_mode==7:  # 이전 질문 검색(회사본문검색=0, 웹문서검색=1, 채팅=2) 일때만 
+        prequery_search = False
         
+    # 이전 질문 검색(회사본문검색=0, 웹문서검색=1) 일때만 
+    if prequery_search == True and set_prequery == 1: 
+        embed_class = 0
+        if user_mode < 3:
+            embed_class = user_mode
+        prequery_docs = prequery_embed.embed_search(query=query, classification=prequery_embed_class[embed_class])
         if len(prequery_docs) > 0:
             prequery_score = prequery_docs[0]['score']
             prequery_response = prequery_docs[0]['response']

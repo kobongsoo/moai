@@ -30,12 +30,17 @@ class Callback_Template:
         return formatted_score
     #---------------------------------------------------------------------------------            
     # 본문검색 
-    def template_text_search(self, query:str, response:str, elapsed_time:str=""):
+    def template_text_search(self, query:str, response:str, elapsed_time:str="", es_index_name:str=""):
         assert query, f'query is empty'
         assert response, f'response is empty'
 
+        if es_index_name:
+            index_name = es_index_name
+        else:
+            index_name = self.es_index_name
+            
         # weburl = '10.10.4.10:9000/es/qaindex/docs?query='회사창립일은언제?'&search_size=3&qmethod=2&show=1
-        weblinkurl = f"{self.api_server_url}/es/{self.es_index_name}/docs?query={query}&search_size={self.search_size}&qmethod={self.qmethod}&show=1"
+        weblinkurl = f"{self.api_server_url}/es/{index_name}/docs?query={query}&search_size={self.search_size}&qmethod={self.qmethod}&show=1"
         
         template = {
                     "version": "2.0",

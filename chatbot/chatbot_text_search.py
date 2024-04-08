@@ -8,7 +8,7 @@ import sys
 sys.path.append('..')
 from utils import es_embed_query, make_prompt
 
-def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict):
+def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict, es_index_name:str=''):
 
     template:dict = {}; prompt:str = ''; error:int=0; docs:list=[]
 
@@ -23,7 +23,10 @@ def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict):
     assert user_id, f'user_id is empty'
     assert query, f'query is empty'
 
-    esindex:str = settings['ES_INDEX_NAME']              #"qaindex"  # qaindex    
+    # 입력된 es_index_name 이 있으면 esindex를 설정하고, 없으면 setting에 settings['ES_INDEX_NAME'] 값을 설정함
+    esindex = es_index_name if es_index_name else settings['ES_INDEX_NAME']  
+    assert esindex, f'esindex is empty'
+    
     search_size:int = settings['ES_SEARCH_DOC_NUM']      # 회사본문 검색 계수
     qmethod:int = settings['ES_Q_METHOD']
     

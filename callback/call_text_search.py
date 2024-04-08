@@ -34,7 +34,7 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     id_manager = instance['id_manager']
 
     myutils.log_message(f"-" * 50)
-    myutils.log_message(f"\t[call_text_search][start]=>max_token:{max_tokens},temperature:{temperature},top_p:{top_p},stream:{stream}")
+    myutils.log_message(f"\t[call_text_search][start]=>user_mode:{user_mode},max_token:{max_tokens},temperature:{temperature},top_p:{top_p},stream:{stream}")
     
     start_time = time.time()
 
@@ -54,9 +54,12 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     if status == 0:
         # 돌발 퀴즈를 위한 가장 마지막 질문과 답변을 저장해 둠.
         userdb.insert_quiz(userid=user_id, type=100, query=query, response=response, answer="", info="")   
-        # 이전 질문과 임베딩값 추가함.          
+        # 이전 질문과 임베딩값 추가함. 
+        embed_class = 0
+        if user_mode < 3:
+            embed_class = user_mode
         res, prequery_docs, status = prequery_embed.delete_insert_doc(doc={'query':query, 'response':response},
-                                                                    classification=prequery_embed_classification[user_mode])
+                                                                    classification=prequery_embed_classification[embed_class])
                       
         # 실패명 로그만 남기고 진행
         if status != 0:
@@ -78,8 +81,16 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     el_time = "{:.2f}".format(end_time - start_time)
 
     myutils.log_message(f"*답변: {response}")
-    template = callback_template.template_text_search(query=query, response=response, elapsed_time=el_time)      
+    
+    # es_index_name 설정하는데, user_mode == 22 이면 2번째 Index로 설정, user_mode == 23 이면 3번째 Index로 설정
+    es_index_name:str = ""
+    if user_mode == 22:
+        es_index_name = settings['ES_INDEX_NAME_2']
+    elif user_mode == 23:
+        es_index_name = settings['ES_INDEX_NAME_3']
 
+    myutils.log_message(f'[call_text_search]es_index_name:{es_index_name}, user_mode:{user_mode}\n')
+    template = callback_template.template_text_search(query=query, response=response, elapsed_time=el_time, es_index_name=es_index_name)      
     # 유사한 질문이 있으면 추가
     #myutils.log_message(f"\t[call_callback]prequery_docs\n{prequery_docs}\n")
     callback_template.similar_query(prequery_docs=prequery_docs, template=template)

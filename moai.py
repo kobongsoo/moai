@@ -266,7 +266,7 @@ async def call_callback(settings:dict, data:dict):
         assert callbackurl, f'Error:callbackurl is empty'
 
         #-------------------------------------------------------------------
-        if user_mode == 0:  # 본문검색
+        if user_mode == 0 or user_mode == 22 or user_mode == 23:  # 본문검색
             template = call_text_search(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
         elif user_mode == 1: # 웹검색
@@ -287,7 +287,7 @@ async def call_callback(settings:dict, data:dict):
         elif user_mode == 7: # 이미지 ocr 요약인 경우
             template = call_ocr_summarize(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
-        elif user_mode == 8: # 도발퀴즈인 경우우
+        elif user_mode == 8: # 도발퀴즈인 경우
             template = call_quiz(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
         
@@ -308,6 +308,123 @@ async def call_callback(settings:dict, data:dict):
 
         myutils.log_message(f"=" * 80)
         return callback_response
+
+#----------------------------------------------------------------------
+# 테스트용
+# => 회사규정문서 테스트용 
+#----------------------------------------------------------------------                
+@app.post("/test")
+async def chabot_test(kakaoDict: Dict):
+
+    result:dict = {};  query_format:str = ""; ocr_url:str = ""
+    
+    #await asyncio.sleep(1)
+    kakao_userRequest = kakaoDict["userRequest"]  
+    query:str = kakao_userRequest["utterance"]  # 질문
+    callbackurl:str = kakao_userRequest["callbackUrl"] # callbackurl
+    user_id:str = kakao_userRequest["user"]["id"]
+
+    # 쿼리가 이미지인지 파악하기 위해 type을 얻어옴.'params': {'surface': 'Kakaotalk.plusfriend', 'media': {'type': 'image', 'url':'https://xxxx'}...}
+    if 'media' in kakao_userRequest['params'] and 'type' in kakao_userRequest['params']['media']:
+        query_format = kakao_userRequest['params']['media']['type']
+        
+    settings = myutils.get_options()
+    #----------------------------------------
+    # 체크해봄.
+    check_res = chatbot_check(kakaoDict=kakaoDict, instance=global_instance)
+    if check_res['error'] != 0:
+        if len(check_res['template']) > 0:
+            return JSONResponse(content=check_res['template'])
+        return
+    #----------------------------------------
+    # quiz 처리
+    quiz_dict:dict = {'userid': user_id, 'query': query}
+    quiz_res = get_quiz_template(quiz_dict=quiz_dict, instance=global_instance)
+    if len(quiz_res['template']) > 0:
+        id_manager.remove_id_all(user_id) # 응답 처리중에는 다른 질문할수 없도록 lock 기능을 위한 user_id 제거
+        return JSONResponse(content=quiz_res['template'])                 
+    #----------------------------------------
+    # usermode 얻어옴.
+    usermode_dict = {'userid': user_id, 'query': query, 'query_format': query_format}
+    user_mode = get_user_mode(usermode_dict=usermode_dict, instance=global_instance)
+    #----------------------------------------
+    
+    # 설정 값 얻어옴
+    setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site, prequery 등을 얻어옴
+    s_site:str = "naver" # 웹검색 사이트 기본은 네이버 
+    e_prequery:int = 1  # 예전 유사질문 검색 (기본은 허용)
+    if setting != -1:
+        s_site = setting.get('site', s_site)
+        e_prequery = setting.get('prequery', e_prequery)
+    #-------------------------------------
+    # 이전 질문 검색 처리.
+    prequery_dict:dict = {'userid': user_id, 'query': query, 'usermode':user_mode, 'pre_class': prequery_embed_class, 'set_prequery': e_prequery}
+    pre_template = get_prequery_search_template(prequery_dict=prequery_dict, instance=global_instance)
+    if pre_template: # 이전질문 있으면 이전 질문을 보여줌.
+        id_manager.remove_id_all(user_id) # id 제거
+        return JSONResponse(content=pre_template)   
+    #-------------------------------------    
+    # 출력 dict (docs = 본문검색(0), s_best_contexts = 웹검색(1))
+    result:dict = {'error':0, 'query':'', 'prompt': '', 'template': '', 'docs':[],  's_best_contexts': [] } 
+    #--------------------------------------
+    # 0=회사규정 RAG(수정된 인덱싱 데이터)
+    if user_mode == 0:
+        text_search_dict:dict = {'userid': user_id, 'query': query, 'bi_encoder': g_BI_ENCODER}
+        chatbot_text_search(settings=settings, data=text_search_dict, instance=global_instance, result=result)
+        # 1002=질문에 맞는 내용을 찾지 못한 경우 '질문에 맞는 내용을 찾지 못했습니다. 질문을 다르게 해 보세요.' 메시지만 띄워줌.(콜백호출안함)
+        if result['error'] == 1002:
+            json_response = JSONResponse(content=result['template'])
+            id_manager.remove_id_all(user_id) # id 제거
+            return json_response 
+        elif result['error'] != 0:
+            return
+    #--------------------------------------
+     # 22=회사규정 RAG(원본 인덱싱 데이터)
+    if user_mode == 22 or user_mode == 23:
+        text_search_dict:dict = {'userid': user_id, 'query': query, 'bi_encoder': g_BI_ENCODER}
+        es_index_name:str = ""
+        if user_mode == 22:
+            # *ES_INDEX_NAME_2를 설정함
+            es_index_name = settings['ES_INDEX_NAME_2']
+        else:
+            # *ES_INDEX_NAME_3를 설정함
+            es_index_name = settings['ES_INDEX_NAME_3']
+
+        #myutils.log_message(f"\t[chabot_test]user_mode:{user_mode}, es_inde_name:{es_index_name}\n")
+        chatbot_text_search(settings=settings, data=text_search_dict, instance=global_instance, result=result, es_index_name=es_index_name)
+        # 1002=질문에 맞는 내용을 찾지 못한 경우 '질문에 맞는 내용을 찾지 못했습니다. 질문을 다르게 해 보세요.' 메시지만 띄워줌.(콜백호출안함)
+        if result['error'] == 1002:
+            json_response = JSONResponse(content=result['template'])
+            id_manager.remove_id_all(user_id) # id 제거
+            return json_response 
+        elif result['error'] != 0:
+            return
+    #--------------------------------------
+    call:bool = False
+    for i in range(3):
+        json_response = JSONResponse(content=result['template'])
+        if json_response.status_code == 200:
+            
+            data:dict = {'callbackurl':callbackurl, 'user_mode':user_mode, 'user_id': user_id, 'pre_class': prequery_embed_class,
+                         'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 's_best_contexts': result['s_best_contexts']}
+
+            #myutils.log_message(f"\t[chabot_test]data:{data}\n")
+            # 비동기 작업을 스케줄링 콜백 호출
+            task = asyncio.create_task(call_callback(settings=settings, data=data))
+            
+            myutils.log_message(f"\t[chabot]==>성공: status_code:{json_response.status_code}\ncallbackurl: {callbackurl}\n")  
+            call = True
+            break
+        else:
+            myutils.log_message(f"\t[chabot]==>실패(count:{i}): status_code:{json_response.status_code}\ncallbackurl: {callbackurl}\n")    
+            continue
+    
+    if call == False:
+        id_manager.remove_id_all(user_id) # id 제거
+   
+    return json_response
+#--------------------------------------------------------------------
+    
 #----------------------------------------------------------------------
 # 모아이 챗봇
 #----------------------------------------------------------------------                
@@ -460,6 +577,28 @@ def set_userinfo(content, user_mode:int):
 @app.post("/searchdoc")
 async def searchdoc(content: Dict):
     if set_userinfo(content=content["userRequest"], user_mode=0) != 0:
+        return
+
+    template = callback_template.searchdoc()
+    json_response = JSONResponse(content=template)
+    return json_response
+
+#-----------------------------------------------------------
+# 회사문서검색
+@app.post("/searchdoc2")
+async def searchdoc(content: Dict):
+    if set_userinfo(content=content["userRequest"], user_mode=22) != 0:
+        return
+
+    template = callback_template.searchdoc()
+    json_response = JSONResponse(content=template)
+    return json_response
+    
+#----------------------------------------------------------------------
+# 회사문서검색
+@app.post("/searchdoc3")
+async def searchdoc(content: Dict):
+    if set_userinfo(content=content["userRequest"], user_mode=23) != 0:
         return
 
     template = callback_template.searchdoc()
