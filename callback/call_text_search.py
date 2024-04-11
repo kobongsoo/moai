@@ -33,6 +33,8 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     callback_template = instance['callback_template']
     id_manager = instance['id_manager']
 
+    prequery_docs:list = []
+    
     myutils.log_message(f"-" * 50)
     myutils.log_message(f"\t[call_text_search][start]=>user_mode:{user_mode},max_token:{max_tokens},temperature:{temperature},top_p:{top_p},stream:{stream}")
     
@@ -84,10 +86,13 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     
     # es_index_name 설정하는데, user_mode == 22 이면 2번째 Index로 설정, user_mode == 23 이면 3번째 Index로 설정
     es_index_name:str = ""
+    
     if user_mode == 22:
         es_index_name = settings['ES_INDEX_NAME_2']
+        response = "*벡터DB:원본\n"+response
     elif user_mode == 23:
         es_index_name = settings['ES_INDEX_NAME_3']
+        response = "*벡터DB:GPT편집\n"+response
 
     myutils.log_message(f'[call_text_search]es_index_name:{es_index_name}, user_mode:{user_mode}\n')
     template = callback_template.template_text_search(query=query, response=response, elapsed_time=el_time, es_index_name=es_index_name)      
