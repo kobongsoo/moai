@@ -683,7 +683,7 @@ async def setting(content: Dict):
     search_site:str = "naver" # 웹검색 사이트 (기본은 naver)
     pre_query:int=1   # 예전 유사 질문 검색(기본=1(검색함))
     pre_query_str:str = '검색함'
-    user_mode_list:list = ['회사문서검색(0)','웹검색(1)','채팅하기(2)', '이미지생성(3)']   
+    user_mode_list:list = ['회사문서검색(수동)','웹검색(1)','채팅하기(2)', '이미지생성(3)']   
     user_mode_str:str = "없음"
     
     setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site를 얻어옴
@@ -694,7 +694,7 @@ async def setting(content: Dict):
         user_mode = 0
 
     if user_mode == 22:
-        user_mode_str = '회사문서검색(수동)'
+        user_mode_str = '회사문서검색(원본)'
     elif user_mode == 23:
         user_mode_str = '회사문서검색(GPT)'
     else:
