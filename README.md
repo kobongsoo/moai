@@ -218,5 +218,9 @@ docker commit mj moai-jupyter:1.1
 |[sqllitedb_test](https://github.com/kobongsoo/moai/blob/master/sqllitedb_test.ipynb)|sqlite 테스트 예제||
 |[webscraping_test](https://github.com/kobongsoo/moai/blob/master/webscraping_test.ipynb)|웹스크래핑 예제||
 |[parser_test](https://github.com/kobongsoo/moai/blob/master/parser_test.ipynb)|돌발퀴즈 문자열 파싱하는 예제||
+|[langchain_RAS](https://github.com/kobongsoo/moai/blob/master/langchain/langchain_RAS.ipynb)|LangChain 프레임워크를 이용한 RAG 및 sLLM 모델 로딩 예시|해당 폴더에 .env파일을 만들고, OPENAI_API_KEY='{API_KEY}',  HUGGINGFACEHUB_API_TOKEN='{API_TOKEN}'식으로 입력해야 함.|
+
+
+
 
 
