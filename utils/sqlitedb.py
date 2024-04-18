@@ -135,6 +135,8 @@ class SqliteDB:
         
     #----------------------------------------------    
     # setting 관련 
+    
+    # [bong][2024-04-18] LLM 필드 추가함 (LLM=0,1 (0=GPT, 1=Gemma)
     # setting 테이블 : id 입력 시 해당 site(naver, google) 출력 
     # userdb.execute('CREATE TABLE setting(id TEXT, site TEXT, prequery TEXT)')  # setting 테이블 생성
     def select_setting(self, user_id:str):
@@ -150,25 +152,28 @@ class SqliteDB:
             response['id']=df['id'][0]
             response['site']=df['site'][0]
             response['prequery']=df['prequery'][0]
+            response['llmmodel']=df['llmmodel'][0]
             return response
         else:
             return -1
         
+    # [bong][2024-04-18] LLM 필드 추가함 (LLM=0,1 (0=GPT, 1=Gemma)
     # search_site 테이블 :id 있으면 site 업데이트, 없으면 추가
-    def insert_setting(self, user_id:str, site:str, prequery:int):
+    def insert_setting(self, user_id:str, site:str, prequery:int, llmmodel:int):
         
         assert user_id, f'user_id is empty'
         assert site, f'site is empty'
         assert prequery >=0, f'prequery is wrong'
+        assert llmmodel >=0, f'llmmodel is wrong'
         
         try:
             res = self.select_setting(user_id)
             #print(f'[insert_setting]=>res:{res}')
                 
             if res == -1: # 없으면 추가
-                dbquery = f"INSERT INTO setting (id, site, prequery) VALUES ('{user_id}', '{site}', {prequery})"
+                dbquery = f"INSERT INTO setting (id, site, prequery, llmmodel) VALUES ('{user_id}', '{site}', {prequery}, {llmmodel})"
             else: # 있으면 업데이트
-                dbquery = f"UPDATE setting SET site='{site}', prequery={prequery} WHERE id = '{user_id}'"
+                dbquery = f"UPDATE setting SET site='{site}', prequery={prequery}, llmmodel={llmmodel} WHERE id = '{user_id}'"
 
             #print(f'[insert_setting]=>dbquery:{dbquery}')
             self.c.execute(dbquery)

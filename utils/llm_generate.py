@@ -227,6 +227,57 @@ def generate_text_GPT(gpt_model:str, prompt:str, system_prompt:str="",
         return answer, error
 #------------------------------------------------------------------
 
+#-----------------------------------------
+# 구글 Gemma : Huggingface 이용
+# 참고 : https://huggingface.co/docs/api-inference/detailed_parameters
+# text generation 처리
+# -max_tokens: doc에는 0-250 이라고 되어 있지만 512로 해야 긴 문장 응답이 됨.
+#-----------------------------------------
+def generate_Gemma(hf_model_name:str, prompt:str, 
+                   max_tokens:int=512, temperature:float=0.5, hf_auth_key:str=""):
+    
+    error = 0
+    start_time = time.time()
+
+    print(f'[gemma] : prompt: {prompt}\n\n')
+
+    API_URL = "https://api-inference.huggingface.co/models/" + hf_model_name
+    headers = {"Authorization": "Bearer " + hf_auth_key}
+    payload = {
+                "inputs": prompt,
+                "temperature": temperature,          # 1.0=정형화된 결과
+                "max_new_tokens": max_tokens        # max=250
+              }
+     
+    try:
+        # 파레메터들은  아래 url 첨조
+        # https://huggingface.co/docs/api-inference/detailed_parameters
+        answer = requests.post(API_URL, headers=headers, json=payload).json()
+    except Timeout:
+        answer = f'The request timed out.=>max:{timeout}'
+        error = 1001
+        return answer, error
+    except Exception as e:
+        answer = f"Error in API request: {e}"
+        error = 1002
+        return answer, error
+
+    end_time = time.time()
+    elapsed_time = "{:.2f}".format(end_time - start_time)
+
+    text = answer[0]['generated_text']
+    #print(f'[gemma] : {text}\n\n')
+    
+    #start_index = text.find('\nA:') + 3
+    start_index = len(prompt)
+    answer = text[start_index:]
+    print(f'[gemma] : start_index: {start_index}\n\nanswer:{answer}')
+    
+    
+    #print(f'[gemma] (time:{elapsed_time}) {answer}')
+    return answer, error
+#-----------------------------------------
+            
 # main    
 if __name__ == '__main__':
     main()

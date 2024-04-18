@@ -266,7 +266,7 @@ async def call_callback(settings:dict, data:dict):
         assert callbackurl, f'Error:callbackurl is empty'
 
         #-------------------------------------------------------------------
-        if user_mode == 0 or user_mode == 22 or user_mode == 23:  # 본문검색
+        if user_mode == 0 or user_mode == 22 or user_mode == 23:  # RAS 검색
             template = call_text_search(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
         elif user_mode == 1: # 웹검색
@@ -353,9 +353,20 @@ async def chabot_test(kakaoDict: Dict):
     setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site, prequery 등을 얻어옴
     s_site:str = "naver" # 웹검색 사이트 기본은 네이버 
     e_prequery:int = 1  # 예전 유사질문 검색 (기본은 허용)
+    llm_model:int = 0   # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    
     if setting != -1:
         s_site = setting.get('site', s_site)
         e_prequery = setting.get('prequery', e_prequery)
+
+    # [bong][2024-04-18] settings.yaml에 DISABLE_SEARCH_PREANSWER=1 설정되어 있으면 이전검색 무조건 안함.
+    if settings['DISABLE_SEARCH_PREANSWER'] == 1:
+        e_prequery:int = 0
+    
+    e_prequery:int = 0  # 예전 유사질문 검색 (*테스트를 위해서 무조건 유사질문 검색 하지 않도록 막아놈=0으로 설정.)
+
+    # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    llm_model = setting.get('llmmodel', llm_model)
     #-------------------------------------
     # 이전 질문 검색 처리.
     prequery_dict:dict = {'userid': user_id, 'query': query, 'usermode':user_mode, 'pre_class': prequery_embed_class, 'set_prequery': e_prequery}
@@ -406,9 +417,11 @@ async def chabot_test(kakaoDict: Dict):
         if json_response.status_code == 200:
             
             data:dict = {'callbackurl':callbackurl, 'user_mode':user_mode, 'user_id': user_id, 'pre_class': prequery_embed_class,
-                         'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 's_best_contexts': result['s_best_contexts']}
+                         'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 
+                         's_best_contexts': result['s_best_contexts'], 'llm_model': llm_model}
 
             #myutils.log_message(f"\t[chabot_test]data:{data}\n")
+            
             # 비동기 작업을 스케줄링 콜백 호출
             task = asyncio.create_task(call_callback(settings=settings, data=data))
             
@@ -471,6 +484,14 @@ async def chabot(kakaoDict: Dict):
     if setting != -1:
         s_site = setting.get('site', s_site)
         e_prequery = setting.get('prequery', e_prequery)
+
+    # [bong][2024-04-18] settings.yaml에 DISABLE_SEARCH_PREANSWER=1 설정되어 있으면 이전검색 무조건 안함.
+    if settings['DISABLE_SEARCH_PREANSWER'] == 1:
+        e_prequery:int = 0
+
+    # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    llm_model:int = 0   # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    llm_model = setting.get('llmmodel', llm_model)
     #-------------------------------------
     # 이전 질문 검색 처리.
     prequery_dict:dict = {'userid': user_id, 'query': query, 'usermode':user_mode, 'pre_class': prequery_embed_class, 'set_prequery': e_prequery}
@@ -536,7 +557,8 @@ async def chabot(kakaoDict: Dict):
         if json_response.status_code == 200:
             
             data:dict = {'callbackurl':callbackurl, 'user_mode':user_mode, 'user_id': user_id, 'pre_class': prequery_embed_class,
-                         'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 's_best_contexts': result['s_best_contexts']}
+                         'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 
+                         's_best_contexts': result['s_best_contexts'], 'llm_model': llm_model}
             
             # 비동기 작업을 스케줄링 콜백 호출
             task = asyncio.create_task(call_callback(settings=settings, data=data))
@@ -644,9 +666,11 @@ async def setting_save(request: Request):
     user_id = form.get("user_id")
     search_site = form.get("search_engine")
     pre_query = form.get("prequery")
+    llm_model = form.get("llm_model2") # [bong][2024-04-18] 웹에서 설정한 llm_model 종류 읽어옴
         
     # 변경값으로 셋팅.
-    error = userdb.insert_setting(user_id=user_id, site=search_site, prequery=int(pre_query)) # 해당 사용자의 user_id site를 업데이트
+    # 해당 사용자의 user_id site를 업데이트
+    error = userdb.insert_setting(user_id=user_id, site=search_site, prequery=int(pre_query), llmmodel=int(llm_model)) 
     setting_success:bool = False
     if error == 0:
         setting_success = True
@@ -654,7 +678,8 @@ async def setting_save(request: Request):
         myutils.log_message(f"\t[setting]==>setting_save fail!\n")
         
     return templates.TemplateResponse("setting.html", {"request": request, "user_id":user_id, "search_site": search_site, 
-                                                       "pre_query": int(pre_query), "setting_success": setting_success })
+                                                       "pre_query": int(pre_query), "llm_model": int(llm_model), 
+                                                       "setting_success": setting_success })
 #----------------------------------------------------------------------    
 # setting.html 로딩    
 @app.get("/setting/form")
@@ -664,14 +689,16 @@ async def setting_form(request:Request, user_id:str):
     
     search_site:str = "naver" # 웹검색 사이트 (기본은 naver)
     pre_query:int=1   # 예전 유사 질문 검색(기본=1(검색함))
+    llm_model:int=0   # [bong][2024-04-18] llm 모델 (0=gpt, 1=gamma(구글))
     if setting != -1 and setting['site']:
         search_site = setting['site']
         pre_query = setting['prequery']
+        llm_model = setting['llmmodel']
         
     #myutils.log_message(f"\t[setting]==>setting_form=>user_id:{user_id}, search_site:{search_site}, prequery:{pre_query}\n")
     
     return templates.TemplateResponse("setting.html", {"request": request, "user_id":user_id, 
-                                                       "search_site": search_site, "pre_query":pre_query})
+                                                       "search_site": search_site, "pre_query":pre_query, "llm_model":llm_model})
 #----------------------------------------------------------------------
 @app.post("/setting")
 async def setting(content: Dict):
@@ -682,9 +709,12 @@ async def setting(content: Dict):
     
     search_site:str = "naver" # 웹검색 사이트 (기본은 naver)
     pre_query:int=1   # 예전 유사 질문 검색(기본=1(검색함))
+    llm_model:int=0   # llm 모델 종류(0=gpt, 1=gemma)
+    llm_model_list:list = ['GPT','구글 Gemma']   
     pre_query_str:str = '검색함'
     user_mode_list:list = ['회사문서검색(수동)','웹검색(1)','채팅하기(2)', '이미지생성(3)']   
     user_mode_str:str = "없음"
+    llm_model_str:str = ""
     
     setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site를 얻어옴
     #myutils.log_message(f"\t[setting]==>setting:{setting}\n")
@@ -703,12 +733,18 @@ async def setting(content: Dict):
     if setting != -1 and setting['site']:
         search_site = setting['site']
         pre_query = setting['prequery']
+        llm_model = setting['llmmodel']
      
     if pre_query != 1:
         pre_query_str:str = '검색안함'
+
+    # [bong][2024-04-18] llm 모델명 설명
+    if llm_model > 1:
+        llm_model = 0
+    llm_model_str = llm_model_list[llm_model]
         
     linkurl = f'{api_server_url}/setting/form?user_id={user_id}'
-    descript = f'🧒 사용자ID: {user_id}\n\n🕹 현재 동작모드: {user_mode_str}\n💬 에전유사 질문검색: {pre_query_str}\n🌐 웹검색 사이트: {search_site}\n\n예전유사 질문검색, 웹검색 사이트 변경을 원하시면 설정하기를 눌러 변경해 주세요.'
+    descript = f'🧒 사용자ID: {user_id}\n\n🕹 현재 동작모드: {user_mode_str}\n💬 에전유사 질문검색: {pre_query_str}\n🌐 웹검색 사이트: {search_site}\n😀AI 모델: {llm_model_str}\n\n예전유사 질문검색, 웹검색 사이트, AI 모델등이 변경을 원하시면 설정하기를 눌러 변경해 주세요.'
     
     template = callback_template.setting(linkurl=linkurl, descript=descript)    
     json_response = JSONResponse(content=template)

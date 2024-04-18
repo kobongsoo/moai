@@ -62,6 +62,14 @@
 				네이버 검색
 			<br>
 			<br>
+			😶AI 모델 선택
+			<br>
+			<input type="radio" name="llm_model2" value=0 {% if llm_model == 0 %}checked{% endif %} style="font-size:30px; width:36px;height:36px">
+				GPT
+			<input type="radio" name="llm_model2" value=1 {% if llm_model == 1 %}checked{% endif %} style="font-size:30px; width:36px;height:36px">
+				구글 Gemma
+			<br>
+			<br>
 			<br>
 			<input type="hidden" name="user_id" value="{{user_id}}">
 			<button type="submit" style="font-size: 40px;">설정하기</button>

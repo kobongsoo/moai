@@ -8,7 +8,7 @@ import sys
 from typing import Union, Dict, List, Optional
 
 sys.path.append('..')
-from utils import generate_text_GPT2, generate_text_davinci
+from utils import generate_text_GPT2, generate_text_davinci, generate_Gemma
 
 def call_text_search(settings:dict, data:dict, instance:dict):
 
@@ -20,13 +20,24 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     top_p = settings.get('GPT_TOP_P', 0.1)
     stream = settings.get('GTP_STREAM', False)
 
+    # [bong][2024-04-18] Gemma 모델 사용을 위한 설정겂 얻어
+    hf_model_name = settings['HF_GEMMA_MODEL_NAME']  # 허깅페이스 Gemma 모델 명
+    hf_auth_key = settings['HF_AUTH_KEY']            # 허깅페이스 사용자 모델 키
+    gemma_max_tokens = settings.get('GPT_MAX_TOKENS', 1024)  # GEMMA MAX 토큰수
+    
     callbackurl = data['callbackurl']
     prompt = data['prompt']
     query = data['query']
     user_id = data['user_id']
     user_mode = data['user_mode']
     prequery_embed_classification = data['pre_class'] # 회사본문검색 이전 답변 저장.(순서대로 회사검색, 웹문서검색, AI응답답변)
-
+    
+    # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    llm_model = data['llm_model']  
+    llm_mode_str:str = gpt_model
+    if llm_model == 1:
+        llm_mode_str:str = hf_model_name
+        
     userdb = instance['userdb']
     myutils = instance['myutils']
     prequery_embed = instance['prequery_embed']
@@ -42,15 +53,22 @@ def call_text_search(settings:dict, data:dict, instance:dict):
 
     # 프롬프트 구성
     input_prompt = prompt if prompt else query
-                
-    if gpt_model.startswith("gpt-"):
-        #timeout=20초면 2번 돌게 되므로 총 40초 대기함
-        response, status = generate_text_GPT2(gpt_model=gpt_model, prompt=input_prompt, system_prompt=system_prompt, 
-                                              assistants=[], stream=stream, timeout=20,
-                                              max_tokens=max_tokens, temperature=temperature, top_p=top_p) 
+
+    # [bong][2024-04-18] llm 모델 종류 1= 구글 gemma  호출
+    if llm_model == 1:
+        response, status = generate_Gemma(hf_model_name=hf_model_name, 
+                                          prompt=input_prompt, 
+                                          max_tokens=gemma_max_tokens,
+                                          hf_auth_key=hf_auth_key)
     else:
-        response, status = generate_text_davinci(gpt_model=gpt_model, prompt=input_prompt, stream=stream, timeout=20,
-                                                 max_tokens=max_tokens, temperature=temperature, top_p=top_p)
+        if gpt_model.startswith("gpt-"):
+            #timeout=20초면 2번 돌게 되므로 총 40초 대기함
+            response, status = generate_text_GPT2(gpt_model=gpt_model, prompt=input_prompt, system_prompt=system_prompt, 
+                                                  assistants=[], stream=stream, timeout=20,
+                                                  max_tokens=max_tokens, temperature=temperature, top_p=top_p) 
+        else:
+            response, status = generate_text_davinci(gpt_model=gpt_model, prompt=input_prompt, stream=stream, timeout=20,
+                                                     max_tokens=max_tokens, temperature=temperature, top_p=top_p)
 
     # GPT text 생성 성공이면=>질문과 답변을 저정해둠.
     if status == 0:
@@ -89,11 +107,15 @@ def call_text_search(settings:dict, data:dict, instance:dict):
     
     if user_mode == 22:
         es_index_name = settings['ES_INDEX_NAME_2']
-        response = "*벡터DB:원본\n"+response
+        response = f"*규정검색:원본\n*AI모델:{llm_mode_str}\n\n"+response
     elif user_mode == 23:
         es_index_name = settings['ES_INDEX_NAME_3']
-        response = "*벡터DB:GPT편집\n"+response
-
+        response = f"*규정검색:GPT편집\n*AI모델:{llm_mode_str}\n\n"+response
+    elif user_mode == 0:
+        response = f"*규정검색:수동편집\n*AI모델:{llm_mode_str}\n\n"+response
+    else:
+        response = f"*AI모델:{llm_mode_str}\n\n"+response
+        
     myutils.log_message(f'[call_text_search]es_index_name:{es_index_name}, user_mode:{user_mode}\n')
     template = callback_template.template_text_search(query=query, response=response, elapsed_time=el_time, es_index_name=es_index_name)      
     # 유사한 질문이 있으면 추가
