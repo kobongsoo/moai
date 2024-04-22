@@ -86,7 +86,7 @@ id_manager = IdManager()    # chabot3함수에서 중복 질문 방지를 위한
 userdb = SqliteDB(dbname='./data/kakao.db', assistants_len=settings['CHATTING_ASSISTANCE_LEN']) # SQLite DB 
 print(f'*SQLite: ./data/kakao.db')
 
-# 검색 관련
+# 검색 관련kakao
 naver_api = NaverSearchAPI(client_id=settings['NAVER_CLIENT_ID'], client_secret=settings['NAVER_CLINET_SECRET']) # 네이버 검색 클래스 초기화
 google_api = GoogleSearchAPI(api_key=settings['GOOGLE_API_KEY'], search_engine_id=settings['GOOGLE_SEARCH_ENGINE_ID']) # 구글 검색 클래스 초기화
 
@@ -358,15 +358,14 @@ async def chabot_test(kakaoDict: Dict):
     if setting != -1:
         s_site = setting.get('site', s_site)
         e_prequery = setting.get('prequery', e_prequery)
-
+        llm_model = setting.get('llmmodel', llm_model)  # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    
     # [bong][2024-04-18] settings.yaml에 DISABLE_SEARCH_PREANSWER=1 설정되어 있으면 이전검색 무조건 안함.
     if settings['DISABLE_SEARCH_PREANSWER'] == 1:
         e_prequery:int = 0
     
-    e_prequery:int = 0  # 예전 유사질문 검색 (*테스트를 위해서 무조건 유사질문 검색 하지 않도록 막아놈=0으로 설정.)
+    #e_prequery:int = 0  # 예전 유사질문 검색 (*테스트를 위해서 무조건 유사질문 검색 하지 않도록 막아놈=0으로 설정.)
 
-    # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
-    llm_model = setting.get('llmmodel', llm_model)
     #-------------------------------------
     # 이전 질문 검색 처리.
     prequery_dict:dict = {'userid': user_id, 'query': query, 'usermode':user_mode, 'pre_class': prequery_embed_class, 'set_prequery': e_prequery}
@@ -481,17 +480,15 @@ async def chabot(kakaoDict: Dict):
     setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site, prequery 등을 얻어옴
     s_site:str = "naver" # 웹검색 사이트 기본은 네이버 
     e_prequery:int = 1  # 예전 유사질문 검색 (기본은 허용)
+    llm_model:int = 0   # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
     if setting != -1:
         s_site = setting.get('site', s_site)
         e_prequery = setting.get('prequery', e_prequery)
+        llm_model = setting.get('llmmodel', llm_model)  # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
 
     # [bong][2024-04-18] settings.yaml에 DISABLE_SEARCH_PREANSWER=1 설정되어 있으면 이전검색 무조건 안함.
     if settings['DISABLE_SEARCH_PREANSWER'] == 1:
         e_prequery:int = 0
-
-    # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
-    llm_model:int = 0   # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
-    llm_model = setting.get('llmmodel', llm_model)
     #-------------------------------------
     # 이전 질문 검색 처리.
     prequery_dict:dict = {'userid': user_id, 'query': query, 'usermode':user_mode, 'pre_class': prequery_embed_class, 'set_prequery': e_prequery}
