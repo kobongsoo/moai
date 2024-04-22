@@ -219,6 +219,8 @@ docker commit mj moai-jupyter:1.1
 |[webscraping_test](https://github.com/kobongsoo/moai/blob/master/webscraping_test.ipynb)|웹스크래핑 예제||
 |[parser_test](https://github.com/kobongsoo/moai/blob/master/parser_test.ipynb)|돌발퀴즈 문자열 파싱하는 예제||
 |[langchain_RAS](https://github.com/kobongsoo/moai/blob/master/langchain/langchain_RAS.ipynb)|LangChain 프레임워크를 이용한 RAG 및 sLLM 모델 로딩 예시|해당 폴더에 .env파일을 만들고, OPENAI_API_KEY='{API_KEY}',  HUGGINGFACEHUB_API_TOKEN='{API_TOKEN}'식으로 입력해야 함.|
+|[gemma_sum_train](https://github.com/kobongsoo/moai/blob/master/sLLM/gemma-2b-it-sum-ko.ipynb)|구글gemma-2b-it 모델을 가지고 요약 데이터 훈련시키는 예제|테스트 소스: [gemma_test](https://github.com/kobongsoo/moai/blob/master/sLLM/gemma_test.ipynb)|
+|[gemma_qa_train](https://github.com/kobongsoo/moai/blob/master/sLLM/gemma_train.ipynb)|구글 gemma-2b-it 모델을 가지고 Q&A 데이터 훈련시키는 예제|테스트 소스: [gemma_test2](https://github.com/kobongsoo/moai/blob/master/sLLM/gemma_test2.ipynb)|
 
 
 
