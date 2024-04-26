@@ -6,6 +6,10 @@ import requests
 import openai     # pip install "openai<1.0.0"
 import sseclient  # pip install sseclient-py
 
+# 구글 제미나이 SDK 설치
+##!pip install google-generativeai
+import google.generativeai as genai
+
 from requests.exceptions import Timeout
 from functools import lru_cache  # 캐싱
 
@@ -275,6 +279,123 @@ def generate_Gemma(hf_model_name:str, prompt:str,
     
     
     #print(f'[gemma] (time:{elapsed_time}) {answer}')
+    return answer, error
+#-----------------------------------------
+
+#-----------------------------------------
+# [bong][2024-04-25]
+# 구글 gemini 싱글턴 : Gemini API 이용
+# - GOOGLE_API_KEY 발급 받아야 함. => ai.google.dev
+# 참고 : https://wikidocs.net/228927
+#-----------------------------------------
+def generate_Gemini_single(model_name:str, prompt:str, google_api_key:str=""):
+
+    assert model_name, f'mode_name is empty'
+    assert google_api_key, f'google_api_key is empty'
+    assert prompt, f'prompt is empty'
+    
+    error = 0
+    start_time = time.time()
+    #print(f'[Gemini(single)] : prompt: {prompt}\n\n')
+
+    genai.configure(api_key=google_api_key)
+    model = genai.GenerativeModel(model_name)
+    response = model.generate_content(prompt)
+     
+    try:
+        response = model.generate_content(prompt)
+        answer = response.text
+    except Timeout:
+        answer = f'The request timed out.=>max:{timeout}'
+        error = 1001
+        return answer, error
+    except Exception as e:
+        answer = f"Error in API request: {e}"
+        error = 1002
+        return answer, error
+
+    end_time = time.time()
+    elapsed_time = "{:.2f}".format(end_time - start_time)  
+    print(f'[Gemini(single)] (time:{elapsed_time}) {answer}')
+    return answer, error
+#-----------------------------------------
+
+#-----------------------------------------
+# [bong][2024-04-25]
+# 구글 gemini 멀티턴 : Gemini API 이용
+# - GOOGLE_API_KEY 발급 받아야 함. => ai.google.dev
+# 참고 : https://wikidocs.net/228927
+# history:list  => 이전에 질문/답변했던 내용이 리스트로 있어야 하며..
+#-----------------------------------------
+#-----------------------------------------
+# 제미나이 : 이전질문과 답변 목록들을 받아서 제미나이 content 형태로 만드는 함수
+# [Content 구조]
+# {'role': 'user' , 'parts' :[쿼리]}, {'role': 'model', 'parts': ['text': 답변]
+#----------------------------------------
+def Gemini_make_history(prequerys:list=[], preanswers:list=[]):
+
+    history:list=[]
+    # 이전 쿼리와 질문을 gemini content 형태로 만들어서 history 리스트에 추가
+    for prequery, preanswer in zip(prequerys, preanswers):
+       content = {
+           'role': 'user',
+           'parts': [f'{prequery}']
+       }
+       history.append(content)
+       
+       content = {
+           'role': 'model',
+           'parts': [{
+               'text': preanswer
+           }]
+       }
+        
+       history.append(content) 
+
+    return history
+
+#----------------------------------------
+# gemini 멀티턴 
+# => 멀티턴(multi turn) : 이전질문/답변 이어서 하는 방식
+#----------------------------------------
+def generate_Gemini_multi(model_name:str, prompt:str, google_api_key:str="",
+                          prequerys:list=[], preanswers:list=[]):
+
+    assert model_name, f'mode_name is empty'
+    assert google_api_key, f'google_api_key is empty'
+    assert prompt, f'prompt is empty'
+    
+    error = 0
+    start_time = time.time()
+
+    genai.configure(api_key=google_api_key)
+    model = genai.GenerativeModel(model_name)
+
+    # prequery, preanswer를 합쳐서 history 만듬.
+    history:list=[]
+    history = Gemini_make_history(prequerys=prequerys, preanswers=preanswers)
+
+    #print(f'*[history] {history}\n\n')
+    
+    # 쿼리 형태를 만들고, history에 추가
+    gemini_query = {'role':'user', 'parts':[f'{prompt}']}
+    history.append(gemini_query)
+      
+    try:
+        response = model.generate_content(history)
+        answer = response.text
+    except Timeout:
+        answer = f'The request timed out.=>max:{timeout}'
+        error = 1001
+        return answer, error
+    except Exception as e:
+        answer = f"Error in API request: {e}"
+        error = 1002
+        return answer, error
+        
+    end_time = time.time()
+    elapsed_time = "{:.2f}".format(end_time - start_time)  
+    print(f'*[answer] (time:{elapsed_time}) {answer}\n\n')
     return answer, error
 #-----------------------------------------
             

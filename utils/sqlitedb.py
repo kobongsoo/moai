@@ -165,7 +165,7 @@ class SqliteDB:
         assert site, f'site is empty'
         assert prequery >=0, f'prequery is wrong'
         assert llmmodel >=0, f'llmmodel is wrong'
-        
+
         try:
             res = self.select_setting(user_id)
             #print(f'[insert_setting]=>res:{res}')
@@ -206,6 +206,7 @@ class SqliteDB:
                 data:dict = {}
                 data['id']=df['id'][idx]
                 data['uid']=df['uid'][idx]
+                data['prequery']=df['prequery'][idx]
                 data['preanswer']=df['preanswer'][idx]
                 assistants.append(data)
 
@@ -214,11 +215,15 @@ class SqliteDB:
             return -1
         
     # insert_assistants
-    def insert_assistants(self, user_id:str, preanswer:str):
+    def insert_assistants(self, user_id:str, prequery:str, preanswer:str):
         
         assert user_id, f'user_id is empty'
         assert preanswer, f'preanswer is empty'
         unique_id:str = ""
+
+        # [*중요] ' 문자열 db 입력시 에러나므로 공백으로 치환함
+        prequery = prequery.replace("'", " ")
+        preanswer = preanswer.replace("'", " ")
         
         try:
             
@@ -239,7 +244,7 @@ class SqliteDB:
             # UUID4를 사용하여 랜덤한 유니크한 ID 생성
             unique_id:str = str(uuid.uuid4())
             
-            dbquery = f"INSERT INTO assistants (uid, id, preanswer) VALUES ('{unique_id}','{user_id}', '{preanswer}')"
+            dbquery = f"INSERT INTO assistants (uid, id, prequery, preanswer) VALUES ('{unique_id}','{user_id}', '{prequery}', '{preanswer}')"
             #print(f'[insert_assistants]=>dbquery:{dbquery}')
             self.c.execute(dbquery)
             self.conn.commit()
@@ -300,6 +305,12 @@ class SqliteDB:
         assert query, f'query is empty'
 
         unique_id:str = ""
+
+        # [*중요] ' 문자열 db 입력시 에러나므로 공백으로 치환함
+        query = query.replace("'", " ")
+        response = response.replace("'", " ")
+        answer = answer.replace("'", " ")
+        info = info.replace("'", " ")
         
         try:
             dbquery = f"SELECT * FROM quiz WHERE userid='{userid}' and type={type}"

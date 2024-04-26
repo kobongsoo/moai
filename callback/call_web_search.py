@@ -8,7 +8,7 @@ import sys
 from typing import Union, Dict, List, Optional
 
 sys.path.append('..')
-from utils import generate_text_GPT2, generate_text_davinci, generate_Gemma
+from utils import generate_text_GPT2, generate_text_davinci, generate_Gemma, generate_Gemini_single
 
 def call_web_search(settings:dict, data:dict, instance:dict):
 
@@ -20,6 +20,10 @@ def call_web_search(settings:dict, data:dict, instance:dict):
     top_p = settings.get('GPT_TOP_P', 0.1)
     stream = settings.get('GPT_STREAM', False)
 
+    # [bong][2024-04-26] Gemini 모델 사용을 위한 설정값 
+    gemini_model_name = settings['GEMINI_MODEL_NAME']
+    google_api_key = settings['GOOGLE_API_KEY']
+    
     # [bong][2024-04-18] Gemma 모델 사용을 위한 설정겂 얻어
     hf_model_name = settings['HF_GEMMA_MODEL_NAME']  # 허깅페이스 Gemma 모델 명
     hf_auth_key = settings['HF_AUTH_KEY']            # 허깅페이스 사용자 모델 키
@@ -33,11 +37,13 @@ def call_web_search(settings:dict, data:dict, instance:dict):
     prequery_embed_classification = data['pre_class'] # 회사본문검색 이전 답변 저장.(순서대로 회사검색, 웹문서검색, AI응답답변)
     s_best_contexts:list = data['s_best_contexts']
 
-    # [bong][2024-04-18] llm 모델 종류(0=GPT, 1=구글 Gemma)
+    # [bong][2024-04-18] llm 모델 종류 스트링 설정(0=GPT, 1=구글 Gemma, 2=구글 gemini)
     llm_model = data['llm_model']  
-    llm_mode_str:str = gpt_model
-    if llm_model == 1:
-        llm_mode_str:str = hf_model_name
+    llm_model_str:str = gpt_model
+    if llm_model == 2:
+        llm_model_str:str = gemini_model_name
+    elif llm_model == 1:
+        llm_model_str:str = hf_model_name
         
     userdb = instance['userdb']
     myutils = instance['myutils']
@@ -52,8 +58,16 @@ def call_web_search(settings:dict, data:dict, instance:dict):
     
     input_prompt = prompt if prompt else query
 
-    # [bong][2024-04-18] llm 모델 종류 1= 구글 gemma  호출
-    if llm_model == 1:
+    if llm_model == 2:    # [bong][2024-04-26] llm 모델 종류 2 = 구글 gemini_single trun  호출
+        myutils.log_message(f'[call_web_search]generate_Gemini_single=>model_name:{gemini_model_name}\n')
+        myutils.log_message(f'[call_web_search]generate_Gemini_single=>prompt:{input_prompt}\n')
+        myutils.log_message(f'[call_web_search]generate_Gemini_single=>google_api_key:{google_api_key}\n')
+        
+        response, status = generate_Gemini_single(model_name=gemini_model_name,
+                                                  prompt=input_prompt, 
+                                                  google_api_key=google_api_key)
+        
+    elif llm_model == 1: # [bong][2024-04-18] llm 모델 종류 1= 구글 gemma  호출
         response, status = generate_Gemma(hf_model_name=hf_model_name, 
                                           prompt=input_prompt, 
                                           max_tokens=gemma_max_tokens,
@@ -98,7 +112,7 @@ def call_web_search(settings:dict, data:dict, instance:dict):
     myutils.log_message(f"*답변: {response}")
 
     # [bong][2024-04-18] llm 모델 종류 표기(0=GPT, 1=구글 Gemma)
-    response = f"*AI모델:{llm_mode_str}\n\n"+response
+    response = f"*AI모델:{llm_model_str}\n\n"+response
     template = callback_template.template_web_search(query=query, response=response, s_best_contexts=s_best_contexts, elapsed_time=el_time)      
 
     # 유사한 질문이 있으면 추가

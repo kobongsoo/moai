@@ -706,8 +706,8 @@ async def setting(content: Dict):
     
     search_site:str = "naver" # 웹검색 사이트 (기본은 naver)
     pre_query:int=1   # 예전 유사 질문 검색(기본=1(검색함))
-    llm_model:int=0   # llm 모델 종류(0=gpt, 1=gemma)
-    llm_model_list:list = ['GPT','구글 Gemma']   
+    llm_model:int=0   # llm 모델 종류(0=gpt, 1=구글 gemma, 2=구글 gemini)
+    llm_model_list:list = ['GPT','구글 Gemma', '구글 Gemini']   
     pre_query_str:str = '검색함'
     user_mode_list:list = ['회사문서검색(수동)','웹검색(1)','채팅하기(2)', '이미지생성(3)']   
     user_mode_str:str = "없음"
@@ -736,7 +736,7 @@ async def setting(content: Dict):
         pre_query_str:str = '검색안함'
 
     # [bong][2024-04-18] llm 모델명 설명
-    if llm_model > 1:
+    if llm_model > 2:
         llm_model = 0
     llm_model_str = llm_model_list[llm_model]
         
