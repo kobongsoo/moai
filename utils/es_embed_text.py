@@ -239,6 +239,7 @@ class ES_Embed_Text:
         
         error:int = 0
         doc1 = doc
+        prequery_docs:list = []
         #print(f'doc:{doc1}')
         #print(f'type: {type(doc1)}')
         
@@ -312,7 +313,6 @@ class ES_Embed_Text:
             #print(f'\t==>[delete_insert_doc]=>self.insert=>res:{res}')
             
             # 유사한 질문들을 추출함.
-            prequery_docs:list = []
             for hit in response["hits"]["hits"]: 
                 pre_doc = {}
                 pre_doc['score'] = hit['_score']
