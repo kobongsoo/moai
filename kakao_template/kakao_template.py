@@ -490,8 +490,8 @@ class Callback_Template:
     # 본문검색 클릭시 
     def searchdoc(self):
         
-        title = "📃본문검색\n질문을 하면 회사본문내용를🔍검색해서 모아이가 답을 합니다."
-        descript = '''지금은 모코엠시스 2023년 '회사규정'과 '회사소개' 관련만🔍검색할 수 있습니다.(업데이트 예정..)\n\n[내용보기]를 누르면 검색한 💬본문내용을 볼 수 있습니다.
+        title = "📃회사문서검색\n질문을 하면 회사문서를🔍검색해서 모아이가 답을 합니다."
+        descript = '''지금은 모코엠시스 2024년 '회사규정' 관련만🔍검색할 수 있습니다.\n\n[내용보기]를 누르면 검색한 💬문서내용도 볼 수 있습니다.
         '''
         
         template = {
@@ -508,13 +508,13 @@ class Callback_Template:
                         "buttons": [
                         {
                           "action":  "message",
-                          "label": "출장시 숙박비는 얼마?",
-                          "messageText": "출장시 숙박비는 얼마?"
+                          "label": "국내출장시 식비는 얼마?",
+                          "messageText": "국내출장시 식비는 얼마?"
                         },
                         {
                           "action":  "message",
-                          "label": "야근 식대는 얼마?",
-                          "messageText": "야근 식대는 얼마?"
+                          "label": "주말근무수당은 얼마?",
+                          "messageText": "주말근무수당은 얼마?"
                         }
                       ]
                      }
