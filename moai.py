@@ -136,7 +136,7 @@ templates = Jinja2Templates(directory="template_files") # html 파일이 있는 
 async def root():
     settings = myutils.get_options()
     return { "MoI(모아이)":"모아이(MoAI)", "1.임베딩모델": settings["E_MODEL_PATH"], "2.LLM모델": settings["GPT_MODEL"], "3.ES" : settings["ES_URL"], 
-            "4.후보검색(1=함,0=안함)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"]}
+            "4.BM25검색(0=안함/1=함+후보적용/2=함+RRF적용)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"]}
 #----------------------------------------------------------------------
 # GET : es/{인덱스명}/docs 검색(비동기)
 # => http://127.0.0.1:9000/es/{인덱스}/docs?query=쿼리문장&search_size=5

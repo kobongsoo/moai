@@ -38,7 +38,7 @@ def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict, es
     try:
         # es로 임베딩 쿼리 실행      
         error_str, docs = es_embed_query(settings=settings, esindex=esindex, query=query, 
-                                            search_size=search_size, bi_encoder=bi_encoder, qmethod=qmethod)
+                                         search_size=search_size, bi_encoder=bi_encoder, qmethod=qmethod)
         
         # prompt 생성 => min_score 보다 작은 conext는 제거함.
         prompt, embed_context = make_prompt(settings=settings, docs=docs, query=query)

@@ -8,7 +8,7 @@ import asyncio
 from elasticsearch import Elasticsearch
 
 from .es_embed import embedding
-
+from .algorithm import weighted_reciprocal_rank_fusion
 #---------------------------------------------------------------------------
 # ES 평균 쿼리 스크립트 구성
 # => 1문서당 10개의 벡터가 있는 경우 10개의 벡터 유사도 평균 구하는 스크립트
@@ -232,11 +232,14 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     float_type = settings['E_FLOAT_TYPE']
     vector_num = settings['NUM_CLUSTERS']
 
-    uid_search = settings['ES_UID_SEARCH'] # 입베딩 검색하기전 후보군 검색할지 안할지(1=검색함/0=검색안함)
+    # 회사문서검색전 BM25 후보군 검색 & RRF 알고리즘 적용 유.무 설정
+    uid_search = settings['ES_UID_SEARCH'] # BM25검색: 임베딩 검색하기전 후보군 검색할지 안할지(0=검색안함/1=BM25 검색함+후보군적용/2=BM25 검색함+ BM25와 임베딩 순위를 RRF(상호 순위 융합) 적용함)
     uid_min_score = settings['ES_UID_MIN_SCORE']# 후보군 검색 스코어 xx이하면 제거 =>안녕하세요 검색하면 1.1정도 검색됨(벡터 1개일때 =>5.0),클러스터링10개 일때=>11.0
     uid_search_len = settings['ES_UID_SEARCH_LEN'] # 후보군 검색할 계수
+    uid_bm25_weigth = settings['ES_RRF_BM25_WEIGTH'] # ES_UID_SEARCH=2 일때 BM25 가중치(EMBED와 합쳐서 2가되어야 함)
+    uid_embed_weigth = settings['ES_RRF_EMBED_WEIGTH'] # ES_UID_SEARCH=2 일때 EMBED 가중치
 
-    print(f'uid_search: {uid_search}, uid_min_score: {uid_min_score}, uid_search_len:{uid_search_len}')
+    #print(f'\t\t===>uid_search: {uid_search}, uid_min_score: {uid_min_score}, uid_search_len:{uid_search_len}, uid_bm25_weigth:{uid_bm25_weigth}, uid_embed_weigth:{uid_embed_weigth}')
 
     # 1.elasticsearch 접속
     es = Elasticsearch(es_url)   
@@ -260,19 +263,29 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     #print(f'vector_num: {type(vector_num)}/{vector_num}')
 
     #  후보군 검색이 설정된 경우에 es 일반검색 해서 후보군 리스트 뽑아냄.(*후보군이 있으면 일반검색 하지 않음)
-    if uid_search == 1:        
-        docs = []
+    BM25_docs:list = []
+    if uid_search == 1 or uid_search == 2:        
         if uids == None:
             #print(f'[후보군 검색] Q:{query}')
             
             #* es로 쿼리해서 후보군 추출.
             data = {'rfile_text': query}
-            uids, docs = es_search_uids(es=es, esindex=esindex, uid_min_score=uid_min_score, size=uid_search_len, data=data)
+            uids, BM25_docs = es_search_uids(es=es, esindex=esindex, uid_min_score=uid_min_score, size=uid_search_len, data=data)
+
+        # ==================================================================
+        # [bong][2024-05-17] RRP(Reciprocal Rank Fusion: 상호 순위 융합) 일때는 uids=None 으로 해야 
+        # 뒤에 임베딩 검색 쿼리 만들때 후보군으로 지정하지 않고 검색됨.
+        # ==================================================================
+        if uid_search == 2:
+            #print(f'\t==>[RRF] es_embed_query:uids:{uids}')
+            uids = []
+        # ==================================================================
             
         #print(f'\t==>es_embed_query:uids:{uids}, qmethod: {qmethod}')
-        if len(uids) < 1:
-            return error, docs # 쿼리,  rfilename, rfiletext, 스코어 리턴 
-    
+        
+        if uid_search == 1 and len(uids) < 1:
+            return error, BM25_docs # 쿼리,  rfilename, rfiletext, 스코어 리턴         
+
     # 2. 검색 문장 embedding 후 벡터값 
     # 쿼리들에 대해 임베딩 값 구함
     start_embedding_time = time.time()
@@ -281,7 +294,7 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     #print("*embedding time: {:.2f} ms".format(end_embedding_time * 1000)) 
     #print(f'*embed_querys.shape:{embed_query.shape}\n')
         
-    # 3. 쿼리 만듬
+    # 3. 임베딩 쿼리 만듬
     # - 쿼리 1개만 하므로, embed_query[0]으로 입력함.
     if qmethod == 0:
         script_query = make_max_query_script(query_vector=embed_query[0], vectormag=vector_mgr, vectornum=int(vector_num), uid_list=uids) # max 쿼리를 만듬.
@@ -290,10 +303,9 @@ def es_embed_query(settings:dict, esindex:str, query:str,
     else:
         script_query = make_query_script(query_vector=embed_query[0], uid_list=uids) # 임베딩 벡터가 1개인경우=>기본 쿼리 만듬.
         
-    #print(f'script_query:{script_query}')
-    #print()
+    #print(f'\t\t===>script_query:{script_query}\n\n')
 
-    # 4. 실제 ES로 검색 쿼리 날림
+    # 4. 실제 ES로 임베딩 검색 쿼리 날림
     response = es.search(
         index=esindex,
         body={
@@ -306,11 +318,11 @@ def es_embed_query(settings:dict, esindex:str, query:str,
 
     # 5. 결과 리턴
     # - 쿼리 응답 결과값에서 _id, _score, _source 등을 뽑아내고 내림차순 정렬후 결과값 리턴
-    #print(f'=>본문검색결과\n{response}\n')
+    #print(f'\t\t===>*임베딩 결과:\n{response}\n')
     
     rfilename = []
     count = 0
-    docs = []
+    embed_docs:list = []
     for hit in response["hits"]["hits"]: 
         tmp = hit["_source"]["rfile_name"]
         
@@ -321,13 +333,56 @@ def es_embed_query(settings:dict, esindex:str, query:str,
             doc['rfile_name'] = hit["_source"]["rfile_name"]      # contextid 담음
             doc['rfile_text'] = hit["_source"]["rfile_text"]      # text 담음.
             doc['score'] = hit["_score"]
-            docs.append(doc)
+            embed_docs.append(doc)
             
             count += 1
             if count >= search_size:
                 break
 
-    return error, docs # 쿼리,  rfilename, rfiletext, 스코어 리턴 
+    # ==================================================================
+    # [bong][2024-05-17] RRP(Reciprocal Rank Fusion: 상호 순위 융합) 처리
+    # => BM25_docs 와 embed_docs를 가지고 RRF(상호 순위 융합) 구함.
+    # ==================================================================
+    if uid_search == 2:
+        print(f'\t==>[RRF] embed_docs 길이: {len(embed_docs)}, BM25_docs 길이:{len(BM25_docs)}')
+        
+        if len(embed_docs) > 0 and len(BM25_docs) > 0:
+            
+            embed_docs_name = [doc['rfile_name'] for doc in embed_docs]
+            BM25_docs_name = [doc['rfile_name'] for doc in BM25_docs]
+
+            print(f'\t==>[RRF] embed_docs_name: {embed_docs_name}')
+            print(f'\t==>[RRF] BM25_docs_name: {BM25_docs_name}')
+            
+            # RRF를 구하는데, 가중치는 똑같이 1,1로 함.
+            # 출력은 튜플('name', 스코어) 을 담고 있는 리스트로 반환됨.
+            # =>예) [('a', 0.8333333333333333), ('b', 0.5), ('d', 0.5), ('c', 0.3333333333333333)]
+            RRF_scores=weighted_reciprocal_rank_fusion(lists=[embed_docs_name, BM25_docs_name], weights=[uid_embed_weigth, uid_bm25_weigth])
+
+            print(f'\t==>[RRF] RRF_scores: {RRF_scores}')
+            
+            # BM25_docs 와 embed_docs 두 리스트를 합쳐서 하나의 딕셔너리로 만듬.
+            combined_docs = {doc['rfile_name']: doc for doc in embed_docs + BM25_docs}
+
+            #print(f'\t==>[RRF] combined_docs: {combined_docs}\n\n')
+            
+            # RRF_scores에 있는 name과 일치하는 rfile_text 값을 combined_docs 리스트에서 찾아서, RRF_docs 리스트에 추가함.
+            RRF_docs = []
+            for name, RRF_score in RRF_scores:
+                if name in combined_docs:
+                    RRF_doc = {
+                        'rfile_name': combined_docs[name]['rfile_name'],  # combined_docs name
+                        'rfile_text': combined_docs[name]['rfile_text'],  # combined_docs rfile_text
+                        'score': RRF_score
+                    }
+                    RRF_docs.append(RRF_doc)
+
+            #print(f'\t==>[RRF] RRF_docs:\n{RRF_docs}\n\n')
+            
+            return error, RRF_docs
+    # ==================================================================
+        
+    return error, embed_docs # 쿼리,  rfilename, rfiletext, 스코어 리턴 
 
 #---------------------------------------------------------------------------
 # 비동기 ES 임베딩 벡터 쿼리 실행 함수
