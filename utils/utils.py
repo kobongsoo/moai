@@ -116,7 +116,7 @@ class MyUtils:
         biscuda = torch.cuda.is_available()
         print(biscuda)
 
-        device = torch.device('cuda:0' if biscuda else 'cpu')
+        device = str(torch.device('cuda:0' if biscuda else 'cpu'))
         print('device:',device)
 
         if biscuda:

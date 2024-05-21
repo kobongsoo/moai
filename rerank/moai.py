@@ -68,18 +68,19 @@ print(f'\t- 본문검색 Index:{settings["ES_INDEX_NAME"]}')
 print(f'\t- 이전질문 Index:{settings["ES_PREQUERY_INDEX_NAME"]}')
 print(f'*BERT:{settings["E_MODEL_PATH"]}')
 print(f'*GPT:{settings["GPT_MODEL"]}')
-print(f'*RERANK:{settings["RERANK_MODEL_PATH"]}')
 
 myutils.seed_everything()  # seed 설정
 DEVICE = settings['GPU']
 if DEVICE == 'auto':
     DEVICE = myutils.GPU_info() # GPU 혹은 CPU
+
+print(f'*DEVICE: {DEVICE}')
 #---------------------------------------------------------------------------
 # 임베딩 모델 로딩
 _, g_BI_ENCODER = load_embed_model(settings['E_MODEL_PATH'], settings['E_POLLING_MODE'], settings['E_OUT_DIMENSION'], DEVICE)
 
 # [bong][2024-05-21] ReRank 모델 설정
-g_RERANK_MODEL = ReRank(model_path=settings['RERANK_MODEL_PATH'])
+g_RERANK_MODEL = ReRank(model_path=settings['RERANK_MODEL_PATH'], device=DEVICE)
 
 # GPT 모델 - GPT 3.5 Turbo 지정 : => 모델 목록은 : https://platform.openai.com/docs/models/gpt-4 참조                                                
 openai.api_key = settings['GPT_TOKEN']# **GPT  key 지정
@@ -137,39 +138,11 @@ print(f'='*80)
 app = FastAPI()
 templates = Jinja2Templates(directory="template_files") # html 파일이 있는 경로를 지정.
 #----------------------------------------------------------------------
-
-#==============================================================
-# [bong][2024-05-21] ReRank 사용일때 처리
-#==============================================================
-
-def rerank(rerank_model, query:str, docs:list):
-    rerank_rfile_texts = [doc['rfile_text'] for doc in docs] # docs에서 rfile_text 만 뽑아내서 리스트 만듬
-    rerank_rfile_names = [doc['rfile_name'] for doc in docs] # docs에서 rfile_name 만 뽑아내서 리스트 만듬
-
-    # 스코어 구함.
-    rerank_scores = rerank_model.compute_score(query=query, contexts=rerank_rfile_texts)
-
-    # 세 리스트를 결합하여 하나의 리스트로 생성
-    rerank_combined_list = list(zip(rerank_scores, rerank_rfile_texts, rerank_rfile_names))
-
-    # scores 값을 기준으로 내림차순으로 정렬
-    rerank_sorted_list = sorted(rerank_combined_list, key=lambda x: x[0], reverse=True)
-            
-    # 정렬된 리스트를 원하는 형식의 딕셔너리 리스트로 변환
-    docs:list=[] # 초기화하고
-    docs = [{'rfile_name': name, 'rfile_text': text, 'score': score} for score, text, name in rerank_sorted_list]
-
-    #print(f'\n*[rerank] docs\n{docs}')
-    
-    return docs
-#==============================================================    
-
 @app.get("/")
 async def root():
     settings = myutils.get_options()
     return { "MoI(모아이)":"모아이(MoAI)", "1.임베딩모델": settings["E_MODEL_PATH"], "2.LLM모델": settings["GPT_MODEL"], "3.ES" : settings["ES_URL"], 
-            "4.BM25검색(0=안함/1=함+후보적용/2=함+RRF적용)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"],
-           "6.ReRank(0=안함/1=함)":settings["USE_RERANK"], "7.RERANK 모델":settings["RERANK_MODEL_PATH"], "8.검색최소스코어(유사도가 이하이면 검색내용제거)":settings["ES_SEARCH_MIN_SCORE"]}
+            "4.BM25검색(0=안함/1=함+후보적용/2=함+RRF적용)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"]}
 #----------------------------------------------------------------------
 # GET : es/{인덱스명}/docs 검색(비동기)
 # => http://127.0.0.1:9000/es/{인덱스}/docs?query=쿼리문장&search_size=5
@@ -190,20 +163,11 @@ async def search_documents(esindex:str,
 
     settings = myutils.get_options()
     min_score = settings['ES_SEARCH_MIN_SCORE']
-    use_rerank = settings['USE_RERANK'] # [bong][2024-05-21] ReRank 사용 유.무
     
     try:
         # es로 임베딩 쿼리 실행      
         error, docs = await async_es_embed_query(settings=settings, esindex=esindex, query=query, 
                                                  search_size=search_size,bi_encoder=g_BI_ENCODER, qmethod=qmethod)
-
-        #==============================================================
-        # [bong][2024-05-21] ReRank 사용일때 처리
-        #==============================================================
-        if use_rerank == 1:
-            docs = rerank(rerank_model = g_RERANK_MODEL, query=query, docs=docs)
-        #==============================================================
-
     except Exception as e:
         error = f'async_es_embed_query fail'
         msg = f'{error}=>{e}'
@@ -228,7 +192,7 @@ async def search_documents(esindex:str,
                 if rfile_text:
                     formatted_score = "{:.2f}".format(score)
                     rfile_text = rfile_text.replace("\n", "<br>")
-                    context += '=================================================================<br>[score: ' + str(formatted_score) + ']'+ '<br>' + rfile_text + '<br>'  # 내용과 socore 출력
+                    context += '<br>'+ rfile_text + '<br>[score:'+str(formatted_score)+']' + '<br>'  # 내용과 socore 출력
            
         #response = {"query":query, "docs": context}
         # HTML 문서 생성
@@ -279,13 +243,6 @@ async def search_documents_uid(esindex:str,
         error, docs = await async_es_embed_query(settings=settings, esindex=esindex, query=query, 
                                                  search_size=search_size, bi_encoder=g_BI_ENCODER, qmethod=qmethod, 
                                                  uids=uids)
-        #==============================================================
-        # [bong][2024-05-21] ReRank 사용일때 처리
-        #==============================================================
-        if use_rerank == 1:
-            docs = rerank(rerank_model = g_RERANK_MODEL, query=query, docs=docs)
-        #==============================================================
-    
     except Exception as e:
         error = f'async_es_embed_query fail'
         msg = f'{error}=>{e}'
