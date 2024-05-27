@@ -1,0 +1,84 @@
+kobongsoo,2024-05-21 16:54:40,add Rerank model and RAGPrompt
+kobongsoo,2024-05-17 16:03:17,update RRF Alogrithm
+kobongsoo,2024-05-16 13:21:58,update
+kobongsoo,2024-05-09 10:42:43,update
+kobongsoo,2024-04-26 16:47:19,update
+kobongsoo,2024-04-26 16:38:46,update
+kobongsoo,2024-04-25 11:09:33,Update README.md
+kobongsoo,2024-04-25 11:05:24,update
+kobongsoo,2024-04-24 16:43:02,update
+kobongsoo,2024-04-23 14:52:36,Update README.md
+kobongsoo,2024-04-23 14:45:06,update
+kobongsoo,2024-04-23 08:50:38,update
+kobongsoo,2024-04-22 13:49:27,Update README.md
+kobongsoo,2024-04-22 13:40:03,update
+kobongsoo,2024-04-18 17:14:37,update
+kobongsoo,2024-04-16 17:16:11,Update README.md
+kobongsoo,2024-04-16 17:10:39,update
+kobongsoo,2024-04-16 17:01:00,update
+kobongsoo,2024-04-15 15:27:58,update
+kobongsoo,2024-04-12 19:04:58,update
+kobongsoo,2024-04-11 15:05:15,update
+kobongsoo,2024-04-08 13:46:39,update
+kobongsoo,2024-04-04 14:25:12,update
+kobongsoo,2024-03-29 16:29:35,update
+kobongsoo,2024-03-29 14:23:38,update
+kobongsoo,2024-03-29 13:24:56,update
+kobongsoo,2024-03-28 16:43:22,Update README.md
+kobongsoo,2024-03-28 16:36:34,Update README.md
+kobongsoo,2024-03-28 15:52:02,update
+kobongsoo,2024-03-28 15:49:18,update
+kobongsoo,2024-02-16 11:57:24,update
+kobongsoo,2024-02-16 11:07:42,Update README.md
+kobongsoo,2024-02-15 13:05:12,Update README.md
+kobongsoo,2024-02-15 11:50:36,Update README.md
+kobongsoo,2024-02-15 10:38:29,Update README.md
+kobongsoo,2024-01-23 14:27:08,Add files via upload
+kobongsoo,2023-12-26 15:27:34,Update README.md
+kobongsoo,2023-12-26 15:19:14,Add files via upload
+kobongsoo,2023-12-20 16:54:05,update GPT Options(max_token, temperatue, top_k, stream)
+kobongsoo,2023-12-20 16:53:10,update GPT Options(max_token, temperatue, top_k, stream)
+kobongsoo,2023-12-20 11:24:30,update utils/web_scraping.py
+kobongsoo,2023-12-19 16:32:02,update user_mode.py
+kobongsoo,2023-12-19 11:53:35,update 1.0 setting file
+kobongsoo,2023-12-19 11:50:28,update 1.0
+kobongsoo,2023-12-14 15:36:01,update
+kobongsoo,2023-12-08 17:19:06,Update README.md
+kobongsoo,2023-12-08 16:36:00,Update README.md
+kobongsoo,2023-12-08 16:15:07,Update README.md
+kobongsoo,2023-12-08 15:18:53,Add files via upload
+kobongsoo,2023-12-08 15:18:36,Add files via upload
+kobongsoo,2023-12-08 15:18:14,Delete data/settings_128_.yaml
+kobongsoo,2023-12-08 15:12:11,Update README.md
+kobongsoo,2023-12-08 13:46:41,update
+kobongsoo,2023-12-08 13:44:21,update
+kobongsoo,2023-12-07 09:01:54,Add files via upload
+bong9431,2023-12-07 08:41:32,update
+bong9431,2023-12-07 08:35:05,update
+kobongsoo,2023-12-06 11:51:03,Delete mpowerai/pympower/common/__pycache__/statuscode.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:57,Delete mpowerai/pympower/common/__pycache__/session.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:50,Delete mpowerai/pympower/common/__pycache__/global_val.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:44,Delete mpowerai/pympower/common/__pycache__/__init__.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:32,Delete mpowerai/pympower/classes/custom/__pycache__/gpu_module.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:25,Delete mpowerai/pympower/classes/custom/__pycache__/__init__.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:15,Delete mpowerai/pympower/classes/__pycache__/snf_define.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:08,Delete mpowerai/pympower/classes/__pycache__/snf.cpython-39.pyc
+kobongsoo,2023-12-06 11:50:02,Delete mpowerai/pympower/classes/__pycache__/mutility.cpython-39.pyc
+kobongsoo,2023-12-06 11:49:56,Delete mpowerai/pympower/classes/__pycache__/mshaai.cpython-39.pyc
+kobongsoo,2023-12-06 11:49:49,Delete mpowerai/pympower/classes/__pycache__/mcrypt.cpython-39.pyc
+kobongsoo,2023-12-06 11:49:40,Delete mpowerai/pympower/classes/__pycache__/mbase.cpython-39.pyc
+kobongsoo,2023-12-06 11:49:32,Delete mpowerai/pympower/classes/__pycache__/__init__.cpython-39.pyc
+kobongsoo,2023-12-06 11:49:13,Delete mpowerai/pympower/__pycache__/hostname.cpython-39.pyc
+kobongsoo,2023-12-06 11:49:06,Delete mpowerai/pympower/__pycache__/__init__.cpython-39.pyc
+bong9431,2023-12-06 11:41:14,update
+kobongsoo,2023-12-06 11:33:44,Update .gitignore
+kobongsoo,2023-12-06 11:33:15,Create .gitignore
+kobongsoo,2023-12-06 11:32:56,Delete gitignore.txt
+kobongsoo,2023-12-06 11:32:33,Add files via upload
+kobongsoo,2023-12-06 11:20:20,Delete backup/test
+kobongsoo,2023-12-06 11:19:44,Delete data/test
+bong9431,2023-12-06 11:18:32,first add
+kobongsoo,2023-12-06 11:09:08,Create test
+kobongsoo,2023-12-06 11:07:50,Create test
+kobongsoo,2023-12-06 11:07:30,Create test
+kobongsoo,2023-12-06 11:07:03,Initial commit

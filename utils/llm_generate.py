@@ -269,7 +269,12 @@ def generate_Gemma(hf_model_name:str, prompt:str,
     end_time = time.time()
     elapsed_time = "{:.2f}".format(end_time - start_time)
 
-    text = answer[0]['generated_text']
+    try:
+        text = answer[0]['generated_text']
+    except Exception as e:
+        error = 1003
+        return answer, error
+        
     #print(f'[gemma] : {text}\n\n')
     
     #start_index = text.find('\nA:') + 3
