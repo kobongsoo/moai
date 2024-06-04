@@ -25,6 +25,13 @@
             border-radius: 4px;
             cursor: pointer;
         }
+		#extra_id {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
 
     </style>
 </head>
@@ -41,10 +48,19 @@
 		<br>
 		{{ user_id[35:] }}
 		<br>
+		😁별칭(Extra ID) : 
+		<br>
+		{{ extra_id }}
+		<br>
+		<br>
 		<!--{{ pre_query }}-->
 		</span>
         <form action="/setting/save" method="POST">
 		<span style="font-size: 40px; color: black; font-weight: 200; font-family: Arial, sans-serif;">
+			😁별칭(Extra ID) 등록/변경
+			<br>
+			<input type="text" name="extra_id" id="extra_id" value="{{extra_id}}">
+			<br>
 			<br>
 			💬예전 유사한 질문 검색
 			<br>
@@ -69,6 +85,9 @@
 			<input type="radio" name="llm_model2" value=1 {% if llm_model == 1 %}checked{% endif %} style="font-size:30px; width:36px;height:36px">
 				구글 Gemma
 			<br>
+			<input type="radio" name="llm_model2" value=2 {% if llm_model == 2 %}checked{% endif %} style="font-size:30px; width:36px;height:36px">
+				구글 Gemini
+			<br>
 			<br>
 			<br>
 			<input type="hidden" name="user_id" value="{{user_id}}">
@@ -77,10 +96,10 @@
 
         </form>
 		
-		{% if setting_success %}
-		<script>
-			alert("변경되었습니다.");
-		</script>
+		{% if setting_msg %}
+			<script>
+				alert("{{ setting_msg }}");
+			</script>
 		{% endif %}
 
     </div>

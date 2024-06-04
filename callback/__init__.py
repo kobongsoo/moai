@@ -6,5 +6,7 @@ from .call_ocr import *
 from .call_ocr_summarize import *
 from .call_quiz import *
 from .call_paint import *
+from .call_userdoc_search import *
+
 
 

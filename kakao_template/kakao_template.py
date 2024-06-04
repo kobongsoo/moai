@@ -28,7 +28,86 @@ class Callback_Template:
         if score < 2.0:
             formatted_score = "{:.0f}".format((score-1)*100)
         return formatted_score
-    #---------------------------------------------------------------------------------            
+    #---------------------------------------------------------------------------------
+    # [bong][2024-05-04] 개인문서검색    
+    def template_userdoc_search(self, query:str, response:str, context:str, elapsed_time:str=""):
+    
+        assert query, f'query is empty'
+        assert response, f'response is empty'
+
+        if context == "":
+            context = "* 검색된 문서가 없습니다."
+        elif len(context) > 600:
+            context = context[:599]
+
+        print(f'*context:{context}')
+        
+        if len(response) > 330: # 응답 길이가 너무 크면 simpletext로 처리함
+            text = f"📑{query}\n\n(time:{str(elapsed_time)})\n{response}"                
+            template = {
+                "version": "2.0",
+                "template": {
+                    "outputs": [
+                        {
+                            "simpleText": {
+                            "text": text
+                            }
+                        }
+                    ],
+                    "quickReplies": [
+                        {
+                            "action": "message",
+                            "label": "다시질문..",
+                            "messageText": '?' + query,
+                        },
+                        {
+                            "action": "message",
+                            "label": "내용보기.",
+                            "messageText": '###문서내용###\n\n' + context   
+                        }
+                    ]
+                }
+            }
+        else:   
+            template = {
+                "version": "2.0",
+                "template": {
+                    "outputs": [
+                        {
+                            "textCard": {
+                                "title": '📑' + query,
+                                "description": '(time:' + str(elapsed_time) + ')\n' + response,
+                                "buttons": [
+                                        {
+                                            "action": "message",
+                                            "label": "내용보기",
+                                            "messageText": '###문서내용###\n\n' + context   
+                                        }
+                                    ]
+                            }
+                        }
+                    ],
+                    "quickReplies": [
+                        {
+                            "action": "message",
+                            "label": "다시질문..",
+                                    "messageText": '?'+query
+                        }
+                    ]
+                }
+            } 
+
+        if len(response) > self.QUIZ_MAX_LEN:
+            template['template']['quickReplies'].append(
+                {
+                    "action": "message",
+                    "label": "돌발퀴즈..",
+                    "messageText": '?돌발퀴즈..'
+                }
+            )
+    
+        return template
+    #---------------------------------------------------------------------------------
     # 본문검색 
     def template_text_search(self, query:str, response:str, elapsed_time:str="", es_index_name:str=""):
         assert query, f'query is empty'
@@ -525,6 +604,39 @@ class Callback_Template:
     
         return template
     #---------------------------------------------------------------------------------
+    # [bong][2024-06-03] 개인문서검색 클릭시 
+    def searchuserdoc(self, linkurl:str):
+        
+        title = "📃개인문서검색\n질문을 하면 개인이 등록한 문서들에서🔍검색해서 모아이가 답을 합니다."
+        descript = '''개인문서는 아래 개인문서등록 버튼을 눌러 등록할수 있습니다.\n\n개인문서등록은 카카오톡 PC 환경에서 등록해주세요
+        '''
+        
+        template = {
+            "version": "2.0",
+            "template": {
+                "outputs": [
+                    {
+                    "basicCard": {
+                        "title": title,
+                        "description": descript,
+                        "thumbnail": {
+                            "imageUrl": "http://k.kakaocdn.net/dn/Mmb4W/btsHMLeMhDX/uJ5t0hhGygv3OPpsnZGpFK/2x1.jpg"
+                        },
+                        "buttons": [
+                        {
+                          "action":  "webLink",
+                          "label": "개인문서등록",
+                          "webLinkUrl": linkurl
+                        }
+                      ]
+                     }
+                    }
+                  ]
+               }
+            }
+    
+        return template
+    #---------------------------------------------------------------------------------
     # 웹 클릭시
     def searchweb(self):
         
@@ -572,8 +684,7 @@ class Callback_Template:
     def chatting(self):
         
         title = "🤖채팅하기\n새로운 대화를 시작합니다.\n모아이와 질문을 주고받으면서 채팅하세요."
-        descript = '''질문을 이어가면서 대화할 수 있습니다.
-        '''
+        descript = '''질문을 이어가면서 대화할 수 있습니다.'''
         template = {
             "version": "2.0",
             "template": {

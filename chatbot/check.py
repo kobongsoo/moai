@@ -57,7 +57,12 @@ def chatbot_check(kakaoDict:dict, instance:dict):
         response['error'] = 102
         return response
     #-----------------------------------------------------------   
-    
+    # [bong][2024-06-04] 개인문서내용보기 인 경우 return 시킴
+    if query.startswith("###문서내용###"):
+        myutils.log_message(f't\[chatbot_check] ###문서내용###:{user_id}\n')
+        response['error'] = 103
+        return response
+    #-----------------------------------------------------------       
     # id_manager 에 id 추가.  응답 처리중에는 다른 질문할수 없도록 lock 기능을 위해 user_id 추가함.
     id_manager.add("0", user_id) # mode와 user_id 추가
     

@@ -10,3 +10,4 @@ from .chatbot_ocr import *
 from .chatbot_ocr_summarize import *
 from .chatbot_quiz import *
 from .chatbot_paint import *
+from .chatbot_userdoc_search import *

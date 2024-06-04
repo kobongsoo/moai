@@ -22,7 +22,7 @@ def get_prequery_search_template(prequery_dict:dict, instance:dict):
     prequery_search = True   # True=이전질문 검색함.  
     if query[0] == '?' or query[0] == '!' or query[0] == '@':
         prequery_search = False
-    elif user_mode==3 or user_mode==4 or user_mode==5 or user_mode==6 or user_mode==7:  # 이전 질문 검색(회사본문검색=0, 웹문서검색=1, 채팅=2) 일때만 
+    elif user_mode==3 or user_mode==4 or user_mode==5 or user_mode==6 or user_mode==7 or user_mode >= 30:  # 이전 질문 검색(회사본문검색=0, 웹문서검색=1, 채팅=2) 일때만 
         prequery_search = False
         
     # 이전 질문 검색(회사본문검색=0, 웹문서검색=1) 일때만 

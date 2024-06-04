@@ -21,6 +21,7 @@ import httpx
 import openai    
 import uvicorn
 import warnings
+import requests
 
 from os import sys
 from typing import Union, Dict, List, Optional
@@ -29,6 +30,7 @@ from fastapi import FastAPI, Query, Cookie, Form, Request, HTTPException, Backgr
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse, HTMLResponse
+from starlette.responses import RedirectResponse
 from elasticsearch import Elasticsearch, helpers  # ES 관련
 
 from utils import create_index, make_docs_df, get_sentences, quiz_parser
@@ -37,9 +39,9 @@ from utils import async_chat_search, remove_prequery, get_title_with_urllink, ma
 from utils import generate_text_GPT2, generate_text_davinci, Google_Vision
 from utils import IdManager, NaverSearchAPI, GoogleSearchAPI, ES_Embed_Text, MyUtils, SqliteDB, WebScraping, KarloAPI
 
-from callback import call_text_search, call_web_search, call_chatting, call_url_summarize, call_ocr, call_ocr_summarize, call_quiz, call_paint
+from callback import call_text_search, call_web_search, call_chatting, call_url_summarize, call_ocr, call_ocr_summarize, call_quiz, call_paint, call_userdoc_search
 from chatbot import chatbot_check, get_quiz_template, get_user_mode, get_prequery_search_template
-from chatbot import chatbot_text_search, chatbot_web_search, chatbot_chatting, chatbot_url_summarize, chatbot_ocr, chatbot_ocr_summarize, chatbot_quiz, chatbot_paint
+from chatbot import chatbot_text_search, chatbot_web_search, chatbot_chatting, chatbot_url_summarize, chatbot_ocr, chatbot_ocr_summarize, chatbot_quiz, chatbot_paint, chatbot_userdoc_search
 
 from kakao_template import Callback_Template, Quiz_Callback_Template
 
@@ -170,6 +172,28 @@ async def root():
     return { "MoI(모아이)":"모아이(MoAI)", "1.임베딩모델": settings["E_MODEL_PATH"], "2.LLM모델": settings["GPT_MODEL"], "3.ES" : settings["ES_URL"], 
             "4.BM25검색(0=안함/1=함+후보적용/2=함+RRF적용)" : settings["ES_UID_SEARCH"], "5.검색방식(0=벡터다수일때 최대값, 1=벡터다수일때 평균, 2=벡터1개일때)" : settings["ES_Q_METHOD"],
            "6.ReRank(0=안함/1=함)":settings["USE_RERANK"], "7.RERANK 모델":settings["RERANK_MODEL_PATH"], "8.검색최소스코어(유사도가 이하이면 검색내용제거)":settings["ES_SEARCH_MIN_SCORE"]}
+
+#---------------------------------------------------------------------
+# [bong][2024-06-04] 외부 url 호출후 리턴받은 값을 json으로 출력하는 예시
+#---------------------------------------------------------------------
+@app.get("/redirect")
+async def redirect():
+    url = "https://a54f-124-194-84-190.ngrok-free.app/search/query?user_id=bong9431&query=제주도관광지추천"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        result = response.json()
+        
+        print(f"*result: {result}")
+        print(f"*text: {result[0]}")
+        print(f"*context: {result[1]}")
+        print(f"*status: {result[2]}")
+        print(f"*doc_names:{result[3]}")
+        
+        return JSONResponse(content=result)
+    else:
+        return JSONResponse(content={"error": "Failed to fetch data"}, status_code=response.status_code)
+    
 #----------------------------------------------------------------------
 # GET : es/{인덱스명}/docs 검색(비동기)
 # => http://127.0.0.1:9000/es/{인덱스}/docs?query=쿼리문장&search_size=5
@@ -339,7 +363,10 @@ async def call_callback(settings:dict, data:dict):
         elif user_mode == 8: # 도발퀴즈인 경우
             template = call_quiz(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
-        
+        elif user_mode == 30: # [bong][2024-06-04] 개인문서검색
+            template = call_userdoc_search(settings=settings, data=data, instance=global_instance)
+        #-------------------------------------------------------------------
+
         for i in range(3):
             # 콜백 url로 anwer 값 전송
             callback_response = await client.post(
@@ -365,7 +392,7 @@ async def call_callback(settings:dict, data:dict):
 @app.post("/test")
 async def chabot_test(kakaoDict: Dict):
 
-    result:dict = {};  query_format:str = ""; ocr_url:str = ""
+    result:dict = {};  query_format:str = ""; ocr_url:str = "";extra_id:str=""
     
     #await asyncio.sleep(1)
     kakao_userRequest = kakaoDict["userRequest"]  
@@ -459,6 +486,15 @@ async def chabot_test(kakaoDict: Dict):
         elif result['error'] != 0:
             return
     #--------------------------------------
+    # [bong][2024-06-04] 30=개인문서검색
+    if user_mode == 30:
+        userdocsearch:dict = {'userid': user_id, 'query': query}
+        chatbot_userdoc_search(settings=settings, data=userdocsearch, instance=global_instance, result=result)
+        # extra_id(별칭) 얻어옴.
+        res = userdb.select_setting(user_id=user_id)
+        if res != -1:
+            extra_id = res['extraid']
+    #-------------------------------------- 
     call:bool = False
     for i in range(3):
         json_response = JSONResponse(content=result['template'])
@@ -466,7 +502,7 @@ async def chabot_test(kakaoDict: Dict):
             
             data:dict = {'callbackurl':callbackurl, 'user_mode':user_mode, 'user_id': user_id, 'pre_class': prequery_embed_class,
                          'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 
-                         's_best_contexts': result['s_best_contexts'], 'llm_model': llm_model}
+                         's_best_contexts': result['s_best_contexts'], 'llm_model': llm_model, 'extra_id': extra_id}
 
             #myutils.log_message(f"\t[chabot_test]data:{data}\n")
             
@@ -492,7 +528,7 @@ async def chabot_test(kakaoDict: Dict):
 @app.post("/chatbot3")
 async def chabot(kakaoDict: Dict):
 
-    result:dict = {};  query_format:str = ""; ocr_url:str = ""
+    result:dict = {};  query_format:str = ""; ocr_url:str = ""; extra_id:str=""
     
     #await asyncio.sleep(1)
     kakao_userRequest = kakaoDict["userRequest"]  
@@ -549,7 +585,7 @@ async def chabot(kakaoDict: Dict):
     # 출력 dict (docs = 본문검색(0), s_best_contexts = 웹검색(1))
     result:dict = {'error':0, 'query':'', 'prompt': '', 'template': '', 'docs':[],  's_best_contexts': [] } 
     #--------------------------------------
-    # 0=본문검색(인덱싱 데이터)
+    # 0=회사규정검색색(인덱싱 데이터)
     if user_mode == 0:
         text_search_dict:dict = {'userid': user_id, 'query': query, 'bi_encoder': g_BI_ENCODER, 'rerank_model': g_RERANK_MODEL}
         chatbot_text_search(settings=settings, data=text_search_dict, instance=global_instance, result=result)
@@ -596,6 +632,15 @@ async def chabot(kakaoDict: Dict):
         quiz_dict:dict = {'userid': user_id, 'query': query, 'quiz_res': quiz_res['quiz']}
         chatbot_quiz(settings=settings, data=quiz_dict, instance=global_instance, result=result)
     #-------------------------------------- 
+    # [bong][2024-06-04] 30=개인문서검색
+    if user_mode == 30:
+        userdocsearch:dict = {'userid': user_id, 'query': query}
+        chatbot_userdoc_search(settings=settings, data=userdocsearch, instance=global_instance, result=result)
+        # extra_id(별칭) 얻어옴.
+        res = userdb.select_setting(user_id=user_id)
+        if res != -1:
+            extra_id = res['extraid']
+    #-------------------------------------- 
     
     call:bool = False
     for i in range(3):
@@ -604,7 +649,7 @@ async def chabot(kakaoDict: Dict):
             
             data:dict = {'callbackurl':callbackurl, 'user_mode':user_mode, 'user_id': user_id, 'pre_class': prequery_embed_class,
                          'prompt': result['prompt'], 'query':result['query'], 'docs':result['docs'], 
-                         's_best_contexts': result['s_best_contexts'], 'llm_model': llm_model}
+                         's_best_contexts': result['s_best_contexts'], 'llm_model': llm_model, 'extra_id': extra_id}
             
             # 비동기 작업을 스케줄링 콜백 호출
             task = asyncio.create_task(call_callback(settings=settings, data=data))
@@ -673,6 +718,41 @@ async def searchdoc(content: Dict):
     json_response = JSONResponse(content=template)
     return json_response
 #----------------------------------------------------------------------
+# [bong][2024-06-03] 개인문서검색
+
+@app.post("/searchuserdoc")
+async def searchuserdoc(content: Dict):
+    user_id:str = content["userRequest"]["user"]["id"]
+    assert user_id, f'user_id is empty'
+    
+    if set_userinfo(content=content["userRequest"], user_mode=30) != 0:
+        return
+
+    settings = myutils.get_options()
+    userdocmgr_url = settings['USER_DOC_MGR_URL']
+    api_server_url:str = settings['API_SERVER_URL']
+
+    # extraid 를 구함
+    res = userdb.select_setting(user_id=user_id)
+    extraid:str = ''
+    if res != -1: 
+        extraid = res['extraid']
+
+    # extraid가 있으면 
+    if extraid:
+        linkurl = f'{userdocmgr_url}/list?user_id={extraid}'
+        print(f'*[searchuserdoc] linkurl: {linkurl}')
+        template = callback_template.searchuserdoc(linkurl=linkurl)
+        print(f'*[searchuserdoc] template: {template}')
+        
+    else: # 없으면 설정창으로 이동할수 있는 url 띄워줌.
+        linkurl = f'{api_server_url}/setting/form?user_id={user_id}'
+        descript = f'개인문서검색을 위해서는 먼저 별칭(extra_id)를 설정해 주셔야 합니다.\n\n아래 설정하기 버튼을 눌러 별칭을 설정해 주십시오.'
+        template = callback_template.setting(linkurl=linkurl, descript=descript)    
+    
+    json_response = JSONResponse(content=template)    
+    return json_response
+#----------------------------------------------------------------------  
 # 웹검색
 @app.post("/searchweb")
 async def searchweb(content: Dict):
@@ -704,7 +784,6 @@ async def painting(content: Dict):
     json_response = JSONResponse(content=template)    
     return json_response
 #----------------------------------------------------------------------  
-
 # setting 관련
 @app.post("/setting/save")
 async def setting_save(request: Request): 
@@ -713,19 +792,27 @@ async def setting_save(request: Request):
     search_site = form.get("search_engine")
     pre_query = form.get("prequery")
     llm_model = form.get("llm_model2") # [bong][2024-04-18] 웹에서 설정한 llm_model 종류 읽어옴
-        
+    extra_id = form.get("extra_id")
+    
     # 변경값으로 셋팅.
     # 해당 사용자의 user_id site를 업데이트
-    error = userdb.insert_setting(user_id=user_id, site=search_site, prequery=int(pre_query), llmmodel=int(llm_model)) 
-    setting_success:bool = False
+    error = userdb.insert_setting(user_id=user_id, extra_id=extra_id, site=search_site, prequery=int(pre_query), llmmodel=int(llm_model)) 
+    myutils.log_message(f"\t[setting]==>error:{error}\n")
+    setting_msg:str = ""
     if error == 0:
-        setting_success = True
+        setting_msg = "변경되었습니다."
+    elif error == 1002:
+        setting_msg = "다른 사용자가 사용하는 별칭입니다.다른 별칭을 입력해주세요."
+        myutils.log_message(f"\t[setting]==>setting_save fail!=>error:{error}, {setting_msg}\n")
+        extra_id = ""
     else:
-        myutils.log_message(f"\t[setting]==>setting_save fail!\n")
+        setting_msg = "에러가 발생하였습니다."
+        extra_id = ""
+        myutils.log_message(f"\t[setting]==>setting_save fail!=>error:{error}, {setting_msg}\n")
         
-    return templates.TemplateResponse("setting.html", {"request": request, "user_id":user_id, "search_site": search_site, 
+    return templates.TemplateResponse("setting.html", {"request": request, "user_id":user_id, "extra_id":extra_id, "search_site": search_site, 
                                                        "pre_query": int(pre_query), "llm_model": int(llm_model), 
-                                                       "setting_success": setting_success })
+                                                       "setting_msg": setting_msg })
 #----------------------------------------------------------------------    
 # setting.html 로딩    
 @app.get("/setting/form")
@@ -736,14 +823,16 @@ async def setting_form(request:Request, user_id:str):
     search_site:str = "naver" # 웹검색 사이트 (기본은 naver)
     pre_query:int=1   # 예전 유사 질문 검색(기본=1(검색함))
     llm_model:int=0   # [bong][2024-04-18] llm 모델 (0=gpt, 1=gamma(구글))
+    extraid_str:str = ""
     if setting != -1 and setting['site']:
         search_site = setting['site']
         pre_query = setting['prequery']
         llm_model = setting['llmmodel']
+        extraid_str = setting['extraid'] # [bong][2024-06-03] 별칭(Extra id) 
         
     #myutils.log_message(f"\t[setting]==>setting_form=>user_id:{user_id}, search_site:{search_site}, prequery:{pre_query}\n")
     
-    return templates.TemplateResponse("setting.html", {"request": request, "user_id":user_id, 
+    return templates.TemplateResponse("setting.html", {"request": request, "user_id":user_id, "extra_id":extraid_str,
                                                        "search_site": search_site, "pre_query":pre_query, "llm_model":llm_model})
 #----------------------------------------------------------------------
 @app.post("/setting")
@@ -761,12 +850,13 @@ async def setting(content: Dict):
     user_mode_list:list = ['회사문서검색(수동)','웹검색(1)','채팅하기(2)', '이미지생성(3)']   
     user_mode_str:str = "없음"
     llm_model_str:str = ""
+    extraid_str:str = ""
     
     setting = userdb.select_setting(user_id=user_id) # 해당 사용자의 site를 얻어옴
     #myutils.log_message(f"\t[setting]==>setting:{setting}\n")
     
     user_mode=userdb.select_user_mode(user_id=user_id)
-    if user_mode == -1:
+    if user_mode == -1 or user_mode >= 30:
         user_mode = 0
 
     if user_mode == 22:
@@ -780,7 +870,9 @@ async def setting(content: Dict):
         search_site = setting['site']
         pre_query = setting['prequery']
         llm_model = setting['llmmodel']
-     
+        # [bong][2024-06-03] 별칭(Extra id) 
+        extraid_str = setting['extraid']
+        
     if pre_query != 1:
         pre_query_str:str = '검색안함'
 
@@ -788,15 +880,16 @@ async def setting(content: Dict):
     if llm_model > 2:
         llm_model = 0
     llm_model_str = llm_model_list[llm_model]
-        
+
+
     linkurl = f'{api_server_url}/setting/form?user_id={user_id}'
-    descript = f'🧒 사용자ID: {user_id}\n\n🕹 현재 동작모드: {user_mode_str}\n💬 에전유사 질문검색: {pre_query_str}\n🌐 웹검색 사이트: {search_site}\n😀AI 모델: {llm_model_str}\n\n예전유사 질문검색, 웹검색 사이트, AI 모델등이 변경을 원하시면 설정하기를 눌러 변경해 주세요.'
+    descript = f'🧒 사용자ID: {user_id}\n\n😁별칭(Extra ID): {extraid_str}\n\n🕹 현재 동작모드: {user_mode_str}\n💬 에전유사 질문검색: {pre_query_str}\n🌐 웹검색 사이트: {search_site}\n😀AI 모델: {llm_model_str}\n\n예전유사 질문검색, 웹검색 사이트, AI 모델등이 변경을 원하시면 설정하기를 눌러 변경해 주세요.'
     
     template = callback_template.setting(linkurl=linkurl, descript=descript)    
     json_response = JSONResponse(content=template)
     return json_response
 #----------------------------------------------------------------------
-
+    
 #============================================================
 def main():
     # 메인 함수의 코드를 여기에 작성합니다.

@@ -135,7 +135,7 @@ class SqliteDB:
         
     #----------------------------------------------    
     # setting 관련 
-    
+    # [bong][2024-06-03] extraid:개인문서검색시 사용할 별칭id 추가함.
     # [bong][2024-04-18] LLM 필드 추가함 (LLM=0,1 (0=GPT, 1=Gemma)
     # setting 테이블 : id 입력 시 해당 site(naver, google) 출력 
     # userdb.execute('CREATE TABLE setting(id TEXT, site TEXT, prequery TEXT)')  # setting 테이블 생성
@@ -150,6 +150,7 @@ class SqliteDB:
             
             response:dict={}
             response['id']=df['id'][0]
+            response['extraid']=df['extraid'][0] # [bong][2024-06-03] 별칭(extra_id) 추가.
             response['site']=df['site'][0]
             response['prequery']=df['prequery'][0]
             response['llmmodel']=df['llmmodel'][0]
@@ -159,21 +160,28 @@ class SqliteDB:
         
     # [bong][2024-04-18] LLM 필드 추가함 (LLM=0,1 (0=GPT, 1=Gemma)
     # search_site 테이블 :id 있으면 site 업데이트, 없으면 추가
-    def insert_setting(self, user_id:str, site:str, prequery:int, llmmodel:int):
+    def insert_setting(self, user_id:str, extra_id:str, site:str, prequery:int, llmmodel:int):
         
         assert user_id, f'user_id is empty'
+        #assert extra_id, f'extra_id is empty'
         assert site, f'site is empty'
         assert prequery >=0, f'prequery is wrong'
         assert llmmodel >=0, f'llmmodel is wrong'
 
         try:
+            # *[중요] 입력한 extraid가 다른사용자가 사용중이면 1002 에러 리턴함.
+            dbquery = f"SELECT * FROM setting WHERE extraid='{extra_id}' and id!='{user_id}'"
+            df = pd.read_sql_query(dbquery, self.conn)
+            if len(df) > 0:
+                return 1002
+            
             res = self.select_setting(user_id)
             #print(f'[insert_setting]=>res:{res}')
                 
             if res == -1: # 없으면 추가
-                dbquery = f"INSERT INTO setting (id, site, prequery, llmmodel) VALUES ('{user_id}', '{site}', {prequery}, {llmmodel})"
+                dbquery = f"INSERT INTO setting (id, extraid, site, prequery, llmmodel) VALUES ('{user_id}', '{extra_id}', '{site}', {prequery}, {llmmodel})"
             else: # 있으면 업데이트
-                dbquery = f"UPDATE setting SET site='{site}', prequery={prequery}, llmmodel={llmmodel} WHERE id = '{user_id}'"
+                dbquery = f"UPDATE setting SET extraid='{extra_id}', site='{site}', prequery={prequery}, llmmodel={llmmodel} WHERE id = '{user_id}'"
 
             #print(f'[insert_setting]=>dbquery:{dbquery}')
             self.c.execute(dbquery)
@@ -366,3 +374,80 @@ class SqliteDB:
             self.c.execute(dbquery)
             self.conn.commit()
     #----------------------------------------------    
+    # [bong][2024-06-03] 개인문서검색 관리 테이블
+    # usermgr 관련 
+    # usermgr 테이블에 있는 모든 id와 extraid 불러옴. 
+    def select_usermgr_all(self):      
+        dbquery = f"SELECT * FROM usermgr"
+        df = pd.read_sql_query(dbquery, self.conn)
+        userdata:list=[]
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['extraud']=df['extraid'][idx]
+                userdata.append(data)
+
+            return 0, userdata
+        else:
+            return -1, userdata
+
+    # usermgr 테이블 
+    def select_usermgr_extraid(self, user_id:str):
+        assert user_id, f'user_id is empty'
+        
+        dbquery = f"SELECT * FROM usermgr WHERE id='{user_id}'"
+        df = pd.read_sql_query(dbquery, self.conn)
+        if len(df) > 0:
+            return 0, df['extraid'][0]
+        else:
+            return -1, None
+        
+    # usermgr 테이블 :id 있으면 extra 업데이트, 없으면 추가
+    def insert_usermgr_extraid(self, user_id:str, extraid:str):
+        assert user_id, f'user_id is empty'
+        assert extraid, f'extraid is empty'
+        
+        try:
+            status, res = self.select_usermgr_extraid(user_id)
+            print(f'*[insert_usermgr_extraid] status: {status}, res:{res}')
+            
+            if status == -1: # 없으면 추가
+                dbquery = f"INSERT INTO usermgr (id, extraid) VALUES ('{user_id}', '{extraid}')"
+            else: # 있으면 업데이트
+                dbquery = f"UPDATE usermgr SET extraid = '{extraid}' WHERE id = '{user_id}'"
+
+            self.c.execute(dbquery)
+            self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'insert_usermgr_extraid=>error:{e}')
+            return 1001
+        
+    # usermgr 테이블 :해당 id 있으면 삭제
+    def delete_usermgr_extraid(self, user_id:str):
+        assert user_id, f'user_id is empty'
+        status, res = self.select_usermgr_extraid(user_id)
+
+        try:
+            if status == 0: # 있으면 제거
+                dbquery = f"DELETE FROM usermgr WHERE id = '{user_id}'"
+                self.c.execute(dbquery)
+                self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'delete_usermgr_extraid=>error:{e}')
+            return 1001
+
+    # 입력한 extraid가 있는지 검사
+    def check_usermgr_extraid(self, extraid:str):
+        assert extraid, f'extraid is empty'
+
+        dbquery = f"SELECT * FROM usermgr WHERE extraid='{extraid}'"
+        df = pd.read_sql_query(dbquery, self.conn)
+        if len(df) > 0:
+            return 0, df['id'][0]
+        else:
+            return -1, None
+        
+        
