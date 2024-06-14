@@ -11,3 +11,7 @@ from .chatbot_ocr_summarize import *
 from .chatbot_quiz import *
 from .chatbot_paint import *
 from .chatbot_userdoc_search import *
+
+from .chatbot_music import *
+from .chatbot_gpt_4o_vision import *
+

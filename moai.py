@@ -39,9 +39,9 @@ from utils import async_chat_search, remove_prequery, get_title_with_urllink, ma
 from utils import generate_text_GPT2, generate_text_davinci, Google_Vision
 from utils import IdManager, NaverSearchAPI, GoogleSearchAPI, ES_Embed_Text, MyUtils, SqliteDB, WebScraping, KarloAPI
 
-from callback import call_text_search, call_web_search, call_chatting, call_url_summarize, call_ocr, call_ocr_summarize, call_quiz, call_paint, call_userdoc_search
+from callback import call_text_search, call_web_search, call_chatting, call_url_summarize, call_ocr, call_ocr_summarize, call_quiz, call_paint, call_userdoc_search, call_music, call_gpt_4o_vision
 from chatbot import chatbot_check, get_quiz_template, get_user_mode, get_prequery_search_template
-from chatbot import chatbot_text_search, chatbot_web_search, chatbot_chatting, chatbot_url_summarize, chatbot_ocr, chatbot_ocr_summarize, chatbot_quiz, chatbot_paint, chatbot_userdoc_search
+from chatbot import chatbot_text_search, chatbot_web_search, chatbot_chatting, chatbot_url_summarize, chatbot_ocr, chatbot_ocr_summarize, chatbot_quiz, chatbot_paint, chatbot_userdoc_search, chatbot_create_music, chatbot_check_create_music, chatbot_gpt_4o_vision_save_image, chatbot_get_music_limit
 
 from kakao_template import Callback_Template, Quiz_Callback_Template
 
@@ -49,6 +49,12 @@ from googletrans import Translator
 
 # [bong][2024-05-21] ReRank 설정
 from rerank import ReRank
+
+# [bong][2024-06-11] SUNO 설정
+from music import SUNO
+
+# [bong][2024-06-13] gpt-4o 설정
+from vision import GPT_4O_VISION
 
 # os가 윈도우면 from eunjeon import Mecab 
 if platform.system() == 'Windows':
@@ -124,11 +130,17 @@ translator = Translator()
 kakako_rest_api_key = settings['KAKAO_REST_API_KEY']
 karlo = KarloAPI(rest_api_key=kakako_rest_api_key)
 
+# [bong][2024-06-11] SUNO 설정
+suno = SUNO()
+
+# [bong][2024-06-13] GPT-40-VISION 설정
+gpt_4o_vision = GPT_4O_VISION(open_api_key=openai.api_key)
+
 # global 인스턴스 dict로 정의
 global_instance:dict = {'myutils': myutils, 'id_manager': id_manager, 'userdb': userdb, 'naver_api': naver_api, 'google_api': google_api, 
                         'webscraping': webscraping, 'google_vision': google_vision, 'prequery_embed': prequery_embed,
                         'callback_template': callback_template, 'quiz_callback_template': quiz_callback_template, 
-                        'translator': translator, 'karlo': karlo}
+                        'translator': translator, 'karlo': karlo, 'suno': suno, 'gpt_4o_vision': gpt_4o_vision}
 
 print(f'='*80)
 #---------------------------------------------------------------------------
@@ -323,7 +335,8 @@ async def search_documents_uid(esindex:str,
 #----------------------------------------------------------------------
 # 카카오 쳇봇 연동 콜백 함수
 # - 콜백함수 정의 : 카카오톡은 응답시간이 5초로 제한되어 있어서, 
-#   5초이상 응답이 필요한 경우(LLM 응답은 10~20초) AI 챗봇 설정-콜백API 사용 신청하고 연동해야한다. 
+#   5초이상 응답이 필요한 경우(LLM 응답은 10~20초) AI 챗봇 설정-콜백API 사용 신청하고 연동해야한다.
+#   콜백API 도 최대 1분까지만 가능함.그 이상은 폴링방식으로 할수 밖에 없음.
 #----------------------------------------------------------------------
 async def call_callback(settings:dict, data:dict):
     async with httpx.AsyncClient() as client: 
@@ -366,6 +379,11 @@ async def call_callback(settings:dict, data:dict):
         elif user_mode == 30: # [bong][2024-06-04] 개인문서검색
             template = call_userdoc_search(settings=settings, data=data, instance=global_instance)
         #-------------------------------------------------------------------
+        elif user_mode == 31: # [bong][2024-06-11] 음악생성(text)
+            template = call_music(settings=settings, data=data, instance=global_instance)
+        #-------------------------------------------------------------------
+        elif user_mode == 32: # [bong][2024-06-13] 음악생성(이미지)
+            template = call_gpt_4o_vision(settings=settings, data=data, instance=global_instance)
 
         for i in range(3):
             # 콜백 url로 anwer 값 전송
@@ -559,6 +577,7 @@ async def chabot(kakaoDict: Dict):
     # usermode 얻어옴.
     usermode_dict = {'userid': user_id, 'query': query, 'query_format': query_format}
     user_mode = get_user_mode(usermode_dict=usermode_dict, instance=global_instance)
+    myutils.log_message(f't\[user_mode]==>{user_mode}\n')
     #----------------------------------------
     
     # 설정 값 얻어옴
@@ -641,7 +660,36 @@ async def chabot(kakaoDict: Dict):
         if res != -1:
             extra_id = res['extraid']
     #-------------------------------------- 
-    
+    # [bong][2024-06-11] 31=text로 음악생성, 
+    if user_mode == 31:
+        music:dict = {'userid': user_id, 'query': query}
+        chatbot_create_music(settings=settings, data=music, instance=global_instance, result=result)
+        json_response = JSONResponse(content=result['template'])
+        id_manager.remove_id_all(user_id) # id 제거
+        return json_response 
+
+    # [bong][2024-06-11] 32=이미지로 음악생성
+    # => URL 이미지 다운로드 => 사이즈변경후 로컬 저장
+    if user_mode == 32:
+        gpt_4o_vision_dict:dict = {'userid': user_id, 'query': query, 'userRequest': kakaoDict["userRequest"]}
+        chatbot_gpt_4o_vision_save_image(settings=settings, data=gpt_4o_vision_dict, instance=global_instance, result=result)
+
+    # [bong][2024-06-11] 33=^음악생성확인^ 인경우
+    if user_mode == 33:
+        music:dict = {'userid': user_id, 'query': query}
+        chatbot_check_create_music(settings=settings, data=music, instance=global_instance, result=result)
+        json_response = JSONResponse(content=result['template'])
+        id_manager.remove_id_all(user_id) # id 제거
+        return json_response 
+
+    # [bong][2024-06-14] suno 남은계수 얻기
+    if user_mode == 34:
+        music:dict = {'userid': user_id, 'query': query}
+        chatbot_get_music_limit(settings=settings, data=music, instance=global_instance, result=result)
+        json_response = JSONResponse(content=result['template'])
+        id_manager.remove_id_all(user_id) # id 제거
+        return json_response 
+    #-------------------------------------- 
     call:bool = False
     for i in range(3):
         json_response = JSONResponse(content=result['template'])
@@ -752,6 +800,71 @@ async def searchuserdoc(content: Dict):
     
     json_response = JSONResponse(content=template)    
     return json_response
+#----------------------------------------------------------------------      
+# [bong][2024-06-11] 음악생성
+@app.post("/music")
+async def searchdoc(content: Dict):
+    user_id:str = content["userRequest"]["user"]["id"]
+    assert user_id, f'user_id is empty'
+
+    if set_userinfo(content=content["userRequest"], user_mode=31) != 0:
+        return
+
+    template = callback_template.music(user_id=user_id)
+    json_response = JSONResponse(content=template)
+    return json_response
+
+#----------------------------------------------------------------------   
+# [bong][2024-06-11] 음악생성후 id를 입력해서 실제 mp4url 얻어오는 함수
+@app.get("/music/get")
+async def music_get(request:Request, music_id:str, user_id:str):
+    
+    assert music_id, f'music_id is empty'
+    assert user_id, f'user_id is empty'
+
+    host = settings['SUNO_API_SERVER']
+    api_url = settings['API_SERVER_URL']
+    
+    datalist:list = []
+    status:int = 0
+    text:str = ""
+    music_id_list:list = music_id.split(', ')
+    
+    try:
+        # 음악 파일(mp3,mp4) 목록 얻기
+        # => 음악 ids 입력후 음악 파일(mp3,mp4) 목록 얻기  
+        status, datalist = suno.getfile_by_ids(ids=music_id_list, host=host, max_retries=1)
+    except Exception as e:
+        msg = f'{error}=>{e}'
+        myutils.log_message(f'\t[call_music][error] {msg}')
+        status = 102
+
+    if status == 0:
+        title = "🎧노래가 완성되었습니다!!\n[노래재생] 버튼을 눌러주세요." 
+        text = f'{datalist[0]["title"]}\n{datalist[0]["lyric"]}' # 제목/내용 출력
+        ids:list = []
+        for data in datalist:
+            ids.append(data["video_url"])
+            
+        template = callback_template.music_success_template(title=title, descript=text, user_id=user_id, music_url=ids)
+    else:
+        # 답변 설정
+        title = "🎧노래 제작중.\n좀더 대기 후 [노래확인] 버튼을 눌러 보세요." 
+        text = "🕙노래 제작은 최대 4분 걸릴 수 있습니다.."
+        template = callback_template.music_template(title=title, descript=text, api_url=api_url, user_id=user_id, music_ids=music_ids)
+
+    myutils.log_message(f'\t[music_get]==>template:{template}')
+    json_response = JSONResponse(content=template)
+    return json_response    
+#---------------------------------------------------------------------
+# music_list.html 로딩
+@app.get("/music/list")
+async def music_list(request:Request, user_id:str):
+    assert user_id, f'user_id is empty'
+    status, musiclist = userdb.select_musiclist(user_id=user_id) # 해당 사용자의 musiclist 항목들을 얻어옴.
+    myutils.log_message(f"\t[music/list]music_list:\n{musiclist}\n")
+    return templates.TemplateResponse("music_list.html", {"request": request, "user_id":user_id, "music_list":musiclist})
+    
 #----------------------------------------------------------------------  
 # 웹검색
 @app.post("/searchweb")
@@ -856,13 +969,17 @@ async def setting(content: Dict):
     #myutils.log_message(f"\t[setting]==>setting:{setting}\n")
     
     user_mode=userdb.select_user_mode(user_id=user_id)
-    if user_mode == -1 or user_mode >= 30:
+    if user_mode == -1:
         user_mode = 0
 
     if user_mode == 22:
         user_mode_str = '회사문서검색(원본)'
     elif user_mode == 23:
         user_mode_str = '회사문서검색(GPT)'
+    elif user_mode == 30:
+        user_mode_str = '개인문서검색'
+    elif user_mode == 31 or user_mode == 32 or user_mode == 33:
+        user_mode_str = '노래만들기'
     else:
         user_mode_str = user_mode_list[user_mode]
     

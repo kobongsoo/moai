@@ -16,12 +16,34 @@ def get_user_mode(usermode_dict:dict, instance:dict):
     webscraping = instance['webscraping']
 
     prefix_query = query[0]
-        
+    
     # 사용자 모드(0=본문검색, 1=웹문서검색, 2=채팅) 얻어옴.
     user_mode = userdb.select_user_mode(user_id)
+
+    
+    # [bong][2024-06-11] 31=text로 음악생성, 32=이미지로 음약생성, 33=^음악생성확인^, 34=getsuno=남은용량얻기
+    if query.startswith("getsuno"):
+        user_mode = 34
+        return user_mode
+        
+    if query.startswith("^노래확인^"):
+        user_mode = 33  
+        return user_mode
+
+    if prefix_query == '🎼':  # 🎼 들어오면->gpt_4o_vision에서 이미지분석후 음악생성 클릭한 경우임.=> 이때는 text가 드러오므로 31로 리턴하면됨.
+        user_mode = 31
+        return user_mode
+        
+    if user_mode == 31:
+        if query_format == "image":
+            user_mode = 32
+        else:
+            user_mode = 31
+        return user_mode
+           
     if user_mode == -1:
         user_mode = 0
-        
+
     # 쿼리가 url 이면 사용자 모드는 5(URL 요약)로 설정
     if prefix_query == '?':
         url_query = query[1:]

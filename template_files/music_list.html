@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Music List</h1>
+		<h4>🧑사용자ID : {{ user_id }}</h4>
+        <table>
+            <thead>
+                <tr>
+					<th></th>
+                    <th>제목</th>
+                    <th>오디오</th>
+                    <th>비디오</th>
+					<th>날짜</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for music in music_list %}
+                <tr>
+					<td>
+						<a href="{{ music.m_imageurl }}" target="_blank">
+							<img src="{{ music.m_imageurl }}" alt="music image" width="50" height="50">
+						</a>
+					</td>
+                    <td>{{ music.m_title }}</td>
+                    <td>
+						<a href="{{ music.m_audiourl }}" target="_blank">재생하기</a>
+						<button onclick="downloadFile('{{ music.m_audiourl }}', '{{ music.m_title }}.mp3')">다운로드</button>
+					</td>
+                    <td>
+						<a href="{{ music.m_videourl }}" target="_blank">재생하기</a>
+						<button onclick="downloadFile('{{ music.m_videourl }}', '{{ music.m_title }}.mp4')">다운로드</button>
+					</td>
+					<td>{{ music.date_time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+	<script>
+        async function downloadFile(url, filename) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Download failed:', error);
+            }
+        }
+    </script>
+</body>
+</html>

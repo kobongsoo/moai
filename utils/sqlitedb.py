@@ -449,5 +449,191 @@ class SqliteDB:
             return 0, df['id'][0]
         else:
             return -1, None
+    #----------------------------------------------    
+    # [bong][2024-06-13] music 관리 테이블
+    # music 관련 
+    # music 테이블에 있는 모든 사용자 데이터 불러옴. 
+    def select_music_all(self):      
+        dbquery = f"SELECT * FROM music"
+        df = pd.read_sql_query(dbquery, self.conn)
+        userdata:list=[]
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['extraud']=df['extraid'][idx]
+                data['musicid1']=df['musicid1'][idx]
+                data['musicid2']=df['musicid2'][idx]
+                userdata.append(data)
+
+            return 0, userdata
+        else:
+            return -1, userdata
+
+    # music 테이블에 해당 user_id 데이터만 불러옴
+    def select_music(self, user_id:str):
+        assert user_id, f'user_id is empty'
         
+        dbquery = f"SELECT * FROM music WHERE id='{user_id}'"
+        df = pd.read_sql_query(dbquery, self.conn)
+        userdata:list=[]
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['extraud']=df['extraid'][idx]
+                data['musicid1']=df['musicid1'][idx]
+                data['musicid2']=df['musicid2'][idx]
+                userdata.append(data)
+
+            return 0, userdata
+        else:
+            return -1, userdata
+        
+    # music 테이블 :id 있으면 업데이트, 없으면 추가
+    def insert_music(self, user_id:str, extraid:str, musicid1:str, musicid2:str):
+        assert user_id, f'user_id is empty'
+        assert musicid1, f'musicid1 is empty'
+        assert musicid2, f'musicid2 is empty'
+        
+        try:
+            status, res = self.select_music(user_id)
+            #print(f'*[insert_music] status: {status}, res:{res}')
+            
+            if status == -1: # 없으면 추가
+                dbquery = f"INSERT INTO music (id, extraid, musicid1, musicid2) VALUES ('{user_id}', '{extraid}', '{musicid1}', '{musicid2}')"
+            else: # 있으면 업데이트
+                dbquery = f"UPDATE music SET extraid = '{extraid}', musicid1='{musicid1}', musicid2='{musicid2}' WHERE id = '{user_id}'"
+
+            self.c.execute(dbquery)
+            self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'insert_music=>error:{e}')
+            return 1001
+        
+    # music 테이블 :해당 id 있으면 삭제
+    def delete_music(self, user_id:str):
+        assert user_id, f'user_id is empty'
+        status, res = self.select_music(user_id)
+
+        try:
+            if status == 0: # 있으면 제거
+                dbquery = f"DELETE FROM music WHERE id = '{user_id}'"
+                self.c.execute(dbquery)
+                self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'delete_music=>error:{e}')
+            return 1001
+    #----------------------------------------------    
+    # [bong][2024-06-13] musiclist 관리 테이블
+    # musiclist 관련 
+    # musiclist 테이블에 있는 모든 사용자 데이터 불러옴. 
+    # => id TEXT, extraid TEXT, m_id TEXT, m_title TEXT, m_lyric TEXT, m_audiourl TEXT, m_videourl TEXT, m_imageurl TEXT, date_time TEXT
+    def select_musiclist_all(self):      
+        dbquery = f"SELECT * FROM musiclist"
+        df = pd.read_sql_query(dbquery, self.conn)
+        userdata:list=[]
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['extraud']=df['extraid'][idx]
+                data['m_id']=df['m_id'][idx]
+                data['m_title']=df['m_title'][idx]
+                data['m_lyric']=df['m_lyric'][idx]
+                data['m_audiourl']=df['m_audiourl'][idx]
+                data['m_videourl']=df['m_videourl'][idx]
+                data['m_imageurl']=df['m_imageurl'][idx]
+                data['date_time']=df['date_time'][idx]
+                userdata.append(data)
+
+            return 0, userdata
+        else:
+            return -1, userdata
+
+    # musiclist 테이블에 해당 user_id 데이터만 불러옴
+    def select_musiclist(self, user_id:str):
+        assert user_id, f'user_id is empty'
+        
+        dbquery = f"SELECT * FROM musiclist WHERE id='{user_id}'"
+        df = pd.read_sql_query(dbquery, self.conn)
+        userdata:list=[]
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['extraud']=df['extraid'][idx]
+                data['m_id']=df['m_id'][idx]
+                data['m_title']=df['m_title'][idx]
+                data['m_lyric']=df['m_lyric'][idx]
+                data['m_audiourl']=df['m_audiourl'][idx]
+                data['m_videourl']=df['m_videourl'][idx]
+                data['m_imageurl']=df['m_imageurl'][idx]
+                data['date_time']=df['date_time'][idx]
+                userdata.append(data)
+
+            return 0, userdata
+        else:
+            return -1, userdata
+
+    # musiclist 테이블에 해당 m_id 데이터만 불러옴
+    def select_musiclist_musicid(self, music_id:str):
+        assert music_id, f'music_id is empty'
+        
+        dbquery = f"SELECT * FROM musiclist WHERE m_id='{music_id}'"
+        df = pd.read_sql_query(dbquery, self.conn)
+        userdata:list=[]
+        if len(df) > 0:
+            for idx in range(len(df)):
+                data:dict = {}
+                data['id']=df['id'][idx]
+                data['extraud']=df['extraid'][idx]
+                data['m_id']=df['m_id'][idx]
+                data['m_title']=df['m_title'][idx]
+                data['m_lyric']=df['m_lyric'][idx]
+                data['m_audiourl']=df['m_audiourl'][idx]
+                data['m_videourl']=df['m_videourl'][idx]
+                data['m_imageurl']=df['m_imageurl'][idx]
+                data['date_time']=df['date_time'][idx]
+                userdata.append(data)
+
+            return 0, userdata
+        else:
+            return -1, userdata
+        
+    # musiclist 테이블 :무조건업데이트
+    def insert_musiclist(self, user_id:str, extraid:str, m_id:str, m_title:str, m_lyric:str, m_audiourl:str, m_videourl:str, m_imageurl:str, date_time:str):
+        assert user_id, f'user_id is empty'
+        
+        try:
+            status, res = self.select_musiclist_musicid(m_id)
+            print(f'*[insert_musiclist] status: {status}, res:{res}')
+                          
+            if status == -1:  # 없으면 추가
+                dbquery = f"INSERT INTO musiclist (id, extraid, m_id, m_title, m_lyric, m_audiourl, m_videourl, m_imageurl, date_time) VALUES ('{user_id}', '{extraid}', '{m_id}', '{m_title}', '{m_lyric}', '{m_audiourl}', '{m_videourl}', '{m_imageurl}', '{date_time}')"
+            else:
+                dbquery = f"UPDATE musiclist SET extraid = '{extraid}', m_title='{m_title}', m_lyric='{m_lyric}', m_audiourl='{m_audiourl}', m_videourl='{m_videourl}', m_imageurl='{m_imageurl}', date_time='{date_time}' WHERE m_id = '{m_id}'"
+            self.c.execute(dbquery)
+            self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'insert_musiclist=>error:{e}')
+            return 1001
+        
+    # musiclist 테이블 :해당 id 있으면 삭제
+    def delete_musiclist(self, user_id:str):
+        assert user_id, f'user_id is empty'
+        status, res = self.select_musiclist(user_id)
+
+        try:
+            if status == 0: # 있으면 제거
+                dbquery = f"DELETE FROM musiclist WHERE id = '{user_id}'"
+                self.c.execute(dbquery)
+                self.conn.commit()
+            return 0
+        except Exception as e:
+            print(f'delete_musiclist=>error:{e}')
+            return 1001
         

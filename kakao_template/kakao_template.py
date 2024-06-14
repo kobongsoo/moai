@@ -29,6 +29,180 @@ class Callback_Template:
             formatted_score = "{:.0f}".format((score-1)*100)
         return formatted_score
     #---------------------------------------------------------------------------------
+    # [bong][2024-06-13] 노래만들기-gpt_4o_vison 사용 이미지 분석
+    def template_gpt_4o_vision(self, query:str, response:str, elapsed_time:str=""):
+    
+        assert query, f'query is empty'
+        assert response, f'response is empty'
+    
+        if len(response) > 330: # 응답 길이가 너무 크면 simpletext로 처리함
+            text = f"🌄{query}\n\n(time:{str(elapsed_time)})\n{response}"                
+            template = {
+                "version": "2.0",
+                "template": {
+                    "outputs": [
+                        {
+                            "simpleText": {
+                            "text": text
+                            }
+                        }
+                    ],
+                    "quickReplies": [
+                        {
+                            "action": "message",
+                            "label": "노래만들기.",
+                            "messageText": '🎼'+response        
+                        }
+                    ]
+                }
+            }
+        else:   
+            template = {
+                "version": "2.0",
+                "template": {
+                    "outputs": [
+                        {
+                            "textCard": {
+                                "title": '🌄' + query,
+                                "description": '(time:' + str(elapsed_time) + ')\n' + response
+                            }
+                        }
+                    ],
+                    "quickReplies": [
+                        {
+                            "action": "message",
+                            "label": "노래만들기.",
+                            "messageText": '🎼'+response           
+                        }
+                    ]
+                }
+            } 
+
+        return template
+    #---------------------------------------------------------------------------------------------    
+    # [bong][2024-06-11] 음악생성
+    def template_music(self, query:str, response:str, datalist:list, elapsed_time:str="", ):
+    
+        assert query, f'query is empty'
+        assert response, f'response is empty'
+    
+        template = {
+                    "version": "2.0",
+                    "template": {
+                        "outputs": [
+                            {
+                                "textCard": {
+                                    "title": '🌄' + query,
+                                    "description": '(time:' + str(elapsed_time) + ')\n' + response,
+                                    "buttons": [
+                                        {
+                                            "action": "webLink",
+                                            "label": f"노래듣기 #{i+1}",
+                                            "webLinkUrl": datalist[i]['video_url']
+                                        } for i in range(min(2, len(datalist)))
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+    
+        return template
+    #---------------------------------------------------------------------------------
+    # [bong][2024-06-11] 노래만들기 클릭시
+    def music(self, user_id:str):
+        
+        title = "🎹노래만들기\nText나 이미지를 입력해 나만에 노래를 만들어 보세요."
+        descript = '''만들고 싶은 주제 Text나 이미지를 입력해 보세요.\n주제에 맞는 노래를 만들어줍니다.\n노래제작은 3~4분 걸립니다.\n완료후 만든 노래를 들어보세요.
+        '''
+        weblinkurl = f"{self.api_server_url}/music/list?user_id={user_id}"
+    
+        template = {
+            "version": "2.0",
+            "template": {
+                "outputs": [
+                    {
+                    "basicCard": {
+                        "title": title,
+                        "description": descript,
+                        "thumbnail": {
+                            "imageUrl": "http://k.kakaocdn.net/dn/wnraS/btsHUSSxpJi/Lm7srp14GTpltvSfXKg7S0/2x1.jpg"
+                        },
+                        "buttons": [
+                        {
+                          "action":  "message",
+                          "label": "노래확인..",
+                          "messageText": "^노래확인^"
+                        },
+                        {
+                          "action":  "webLink",
+                          "label": "내가만든 노래들..",
+                          "webLinkUrl": weblinkurl
+                        }
+                      ]
+                     }
+                    }
+                  ]
+               }
+            }
+    
+        return template
+    #--------------------------------------------------------------------------------- 
+    # [bong][2024-06-11] 노래제작확인
+    def music_template(self, title:str, descript:str, api_url:str, user_id:str):
+        
+        #url = f"{api_url}/music/get?music_id={music_ids}&user_id={user_id}"
+        msg:str = f"^노래확인^"
+        
+        template = {
+          "version": "2.0",
+          "template": {
+            "outputs": [
+              {
+                "textCard": {
+                  "title": title,
+                  "description": descript,
+                  "buttons": [
+                    {
+                      "action": "message",
+                      "label": "노래확인..",
+                      "messageText": msg
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+
+        return template
+    #---------------------------------------------------------------------------------
+    # [bong][2024-06-11] 노래듣기
+    def music_success_template(self, title:str, descript:str, user_id:str, music_url:list=[]):
+        
+        template = {
+          "version": "2.0",
+          "template": {
+            "outputs": [
+              {
+                "textCard": {
+                  "title": title,
+                  "description": descript,
+                  "buttons": [
+                        {
+                            "action": "webLink",
+                            "label": f"노래듣기#{i}",
+                            "webLinkUrl": music_url[i]
+                        } for i in range(min(3, len(music_url)))
+                    ]
+                }
+              }
+            ]
+          }
+        }
+
+        return template
+    #---------------------------------------------------------------------------------
     # [bong][2024-05-04] 개인문서검색    
     def template_userdoc_search(self, query:str, response:str, context:str, elapsed_time:str=""):
     
@@ -831,7 +1005,7 @@ class Callback_Template:
         else:
             return ""
             
-    #---------------------------------------------------------------------------------  
+    #---------------------------------------------------------------------------------      
     # 심플 text 템플릿 
     def simpletext_template(self, text:str, usercallback:bool=False):
         template = {
@@ -861,7 +1035,7 @@ class Callback_Template:
         }
 
         return template
-    #---------------------------------------------------------------------------------  
+    #--------------------------------------------------------------------------------     
     # 유사한 쿼리 quickReplies 추가하기 위한 코드 
     def similar_query(self, prequery_docs:list, template:dict):
         for idx, pdocs in enumerate(prequery_docs):
