@@ -229,6 +229,13 @@ docker commit mj moai-jupyter:1.1
 |[gemini_test2](https://github.com/kobongsoo/moai/blob/master/model_test/gemini/geminai_test2.ipynb)|구글 gemini 모델 Gemini API 연동 테스트..**GOOGLE_API_KEY 파일 발급 필요**|gemini API 연동 샘플 코드들 : [gemini](https://github.com/kobongsoo/moai/tree/master/model_test/gemini/gemini_doc)|
 
 
+## 팁
+huggingface 로그인 방법
+- huggingface 모델을 실행할때(gemma등) 간혹 hugginface 로그인을 필요로 한다. 이때 아래처럼 token을 입력해서 로그인 해야 함.
+```
+import huggingface_hub
+huggingface_hub.login(token='hf_xxxx')
+```
 
 
 
