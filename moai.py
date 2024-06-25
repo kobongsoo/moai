@@ -32,6 +32,7 @@ from pydantic import BaseModel
 from fastapi.responses import JSONResponse, HTMLResponse
 from starlette.responses import RedirectResponse
 from elasticsearch import Elasticsearch, helpers  # ES 관련
+from datetime import datetime
 
 from utils import create_index, make_docs_df, get_sentences, quiz_parser
 from utils import load_embed_model, async_embedding, index_data, async_es_embed_query, async_es_embed_delete
@@ -674,7 +675,7 @@ async def chabot(kakaoDict: Dict):
         gpt_4o_vision_dict:dict = {'userid': user_id, 'query': query, 'userRequest': kakaoDict["userRequest"]}
         chatbot_gpt_4o_vision_save_image(settings=settings, data=gpt_4o_vision_dict, instance=global_instance, result=result)
 
-    # [bong][2024-06-11] 33=^음악생성확인^ 인경우
+    # [bong][2024-06-11] 33=^노래확인^ 인경우
     if user_mode == 33:
         music:dict = {'userid': user_id, 'query': query}
         chatbot_check_create_music(settings=settings, data=music, instance=global_instance, result=result)
@@ -862,6 +863,11 @@ async def music_get(request:Request, music_id:str, user_id:str):
 async def music_list(request:Request, user_id:str):
     assert user_id, f'user_id is empty'
     status, musiclist = userdb.select_musiclist(user_id=user_id) # 해당 사용자의 musiclist 항목들을 얻어옴.
+    
+    # Convert date_time to datetime objects and sort the list in descending order
+    # date_time 내림차순으로 정렬시킴
+    musiclist.sort(key=lambda x: datetime.strptime(x['date_time'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+
     myutils.log_message(f"\t[music/list]music_list:\n{musiclist}\n")
     return templates.TemplateResponse("music_list.html", {"request": request, "user_id":user_id, "music_list":musiclist})
     

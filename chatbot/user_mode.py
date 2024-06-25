@@ -21,7 +21,7 @@ def get_user_mode(usermode_dict:dict, instance:dict):
     user_mode = userdb.select_user_mode(user_id)
 
     
-    # [bong][2024-06-11] 31=text로 음악생성, 32=이미지로 음약생성, 33=^음악생성확인^, 34=getsuno=남은용량얻기
+    # [bong][2024-06-11] 31=text로 음악생성, 32=이미지로 음약생성, 33=^노래확인^, 34=getsuno=남은용량얻기
     if query.startswith("getsuno"):
         user_mode = 34
         return user_mode
