@@ -41,7 +41,17 @@ class GPT_4O_VISION:
         if response.status_code == 200:
             # 이미지 열기
             img = Image.open(BytesIO(response.content))
-    
+
+            # [bong][2024-06-28] 노래만들기 할때 .PNG 파일 업로드 하면 에러남.
+            # => PNG 파일은 투명도를 포함할 수 있는 RGBA 모드를 사용할 수 있는데, 그러나 JPEG는 투명도를 지원하지 않기 때문에 에러남.
+            # => 따라서 PNG 파일을 JPEG로 변환시 투명 부분을 흰색으로 처리함.
+            if img.mode == 'RGBA':
+                # 흰색 배경의 새로운 이미지 생성
+                background = Image.new("RGB", img.size, (255, 255, 255))
+                # 기존 이미지를 배경 이미지에 덮어쓰기
+                background.paste(img, (0, 0), img)
+                img = background
+            
             # 이미지 크기 확인 및 조정
             if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
                 img.thumbnail(max_size)
