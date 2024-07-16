@@ -9,53 +9,71 @@ from elasticsearch import Elasticsearch
 
 from .es_embed import embedding
 from .algorithm import weighted_reciprocal_rank_fusion
+
 #---------------------------------------------------------------------------
 # ES 평균 쿼리 스크립트 구성
 # => 1문서당 10개의 벡터가 있는 경우 10개의 벡터 유사도 평균 구하는 스크립트
 # => 아래 make_max_query_script 보다 엄청 정확도 떨어짐. (max=83%, avg=50%)
 # -in: query_vector = 1차원 임베딩 벡터 (예: [10,10,1,1, ....]
 # -in: vectornum : ES 인덱스 벡터 수
+# -in: vectormag : 사용하지 않음
 #---------------------------------------------------------------------------
 def make_avg_query_script(query_vector, vectornum:int=10, vectormag:float=0.8, uid_list:list=None)->str:
-    # 문단별 10개의 벡터와 쿼리벡터를 서로 비교하여 유사도를 구하고, 10개를 구한 유사도의 평균을 최종 유사도로 지정하여 가장 유사한 문서 출력
-    # => return 스코어는 음수(-0.212345)가 될수 없으므로, 음수가 나오면 0으로 리턴.
+    # 문단별 10개의 벡터와 쿼리벡터를 서로 비교하여 최대값 갖는 문단들중 가장 유사한  문단 출력
     # => script """ 안에 코드는 java 임.
-    # => "queryVectorMag": 0.1905 일때 100% 일치하는 값은 9.98임(즉 10점 만점임)
-    
+                        
     # uid_list가 있는 경우에는 해당하는 목록만 검색함
     if uid_list:
         query = { "bool" :{ "must": [ { "terms": { "rfile_name": uid_list } } ] } }
     else: # uid_list가 있는 경우에는 해당하는 목록만 검색함
         query = { "match_all" : {} }
-        
+    
     script_query = {
         "script_score":{
-            "query":query,
+             "query":query,
                 "script":{
                     "source": """
+                    
+                      float sqrt(float number) {
+                        float guess = number / 2.0f;
+                        float epsilon = 0.00001f;  // 원하는 정확도
+                        while (Math.abs(guess * guess - number) >= epsilon) {
+                            guess = (guess + number / guess) / 2.0f;
+                        }
+                      return guess;
+                      }
+                 
+                      float queryVector_sum_size = 0.0f;
+                      // 쿼리벡터의 크기를 구함.->벡터제곱근 구하고 루트(sqrt) 처리                      
+                      for (int j = 0; j < params.queryVector.length; j++) {
+                          queryVector_sum_size += params.queryVector[j] * params.queryVector[j];
+                      } 
+                      
+                      float queryVector_size = sqrt(queryVector_sum_size);
                       float avg_score = 0;
                       float total_score = 0;
                       for(int i = 1; i <= params.VectorNum; i++) 
                       {
                           float[] v = doc['vector'+i].vectorValue; 
                           float vm = doc['vector'+i].magnitude;  
-                          
                           if (v[0] != 0)
                           {
-                              float dotProduct = 0;
-
-                              for(int j = 0; j < v.length; j++) 
-                              {
-                                  dotProduct += v[j] * params.queryVector[j];
-                              }
-
-                              float score = dotProduct / (vm * (float) params.queryVectorMag);
+                            // dot(내적) 2벡터간 내적을 구함.
+                            float dotProduct = 0.0f;
+                            
+                            for(int j = 0; j < v.length; j++) 
+                            {
+                                dotProduct += v[j] * params.queryVector[j];
+                            }
+                            
+                            // 스코어를 구함 = dot/(벡터1크기*쿼리벡터크기)
+                            float score = dotProduct / (vm * queryVector_size);
                               
-                              if (score < 0) 
-                              {
-                                  score = 0
-                              }
-                              total_score += score;
+                            if (score < 0) 
+                            {
+                                score = 0
+                            }
+                            total_score += score;
                           }
                       }
                       avg_score = total_score / params.VectorNum;
@@ -67,7 +85,6 @@ def make_avg_query_script(query_vector, vectornum:int=10, vectormag:float=0.8, u
                 "params": 
                 {
                   "queryVector": query_vector,  # 벡터임베딩값 설정
-                  "queryVectorMag": vectormag,  # 벡터 크기
                   "VectorNum": vectornum        # 벡터 수 설정
                 }
             }
@@ -82,11 +99,11 @@ def make_avg_query_script(query_vector, vectornum:int=10, vectormag:float=0.8, u
 # => 1문서당 10개의 벡터 중에서 가장 유사도가 큰 1개의 벡터 유사도 측정하는 쿼리
 # -in: query_vector = 1차원 임베딩 벡터 (예: [10,10,1,1, ....]
 # -in: vectornum : ES 인덱스 벡터 수
+# -in: vectormag : 사용하지 않음
 #---------------------------------------------------------------------------
 def make_max_query_script(query_vector, vectornum:int=10, vectormag:float=0.8, uid_list:list=None)->str:
     # 문단별 10개의 벡터와 쿼리벡터를 서로 비교하여 최대값 갖는 문단들중 가장 유사한  문단 출력
     # => script """ 안에 코드는 java 임.
-    # => "queryVectorMag": 0.1905 일때 100% 일치하는 값은 9.98임(즉 10점 만점임)
                         
     # uid_list가 있는 경우에는 해당하는 목록만 검색함
     if uid_list:
@@ -99,35 +116,52 @@ def make_max_query_script(query_vector, vectornum:int=10, vectormag:float=0.8, u
              "query":query,
                 "script":{
                     "source": """
-                      float max_score = 0;
+                    
+                      float sqrt(float number) {
+                        float guess = number / 2.0f;
+                        float epsilon = 0.00001f;  // 원하는 정확도
+                        while (Math.abs(guess * guess - number) >= epsilon) {
+                            guess = (guess + number / guess) / 2.0f;
+                        }
+                      return guess;
+                      }
+                 
+                      float queryVector_sum_size = 0.0f;
+                      // 쿼리벡터의 크기를 구함.->벡터제곱근 구하고 루트(sqrt) 처리                      
+                      for (int j = 0; j < params.queryVector.length; j++) {
+                          queryVector_sum_size += params.queryVector[j] * params.queryVector[j];
+                      } 
+                      
+                      float queryVector_size = sqrt(queryVector_sum_size);
+                      float max_score = 0.0f; 
                       for(int i = 1; i <= params.VectorNum; i++) 
                       {
                           float[] v = doc['vector'+i].vectorValue; 
                           float vm = doc['vector'+i].magnitude;  
-                          
                           if (v[0] != 0)
                           {
-                              float dotProduct = 0;
-
-                              for(int j = 0; j < v.length; j++) 
-                              {
-                                  dotProduct += v[j] * params.queryVector[j];
-                              }
-
-                              float score = dotProduct / (vm * (float) params.queryVectorMag);
-
-                              if(score > max_score) 
-                              {
-                                  max_score = score;
-                              }
+                            // dot(내적) 2벡터간 내적을 구함.
+                            float dotProduct = 0.0f;
+                            
+                            for(int j = 0; j < v.length; j++) 
+                            {
+                                dotProduct += v[j] * params.queryVector[j];
                             }
+                            
+                            // 스코어를 구함 = dot/(벡터1크기*쿼리벡터크기)
+                            float score = dotProduct / (vm * queryVector_size);
+                              
+                            if(score > max_score) 
+                            {
+                                max_score = score;
+                            }
+                          }
                       }
                       return max_score
                     """,
                 "params": 
                 {
                   "queryVector": query_vector,  # 벡터임베딩값 설정
-                  "queryVectorMag": vectormag,  # 벡터 크기
                   "VectorNum": vectornum        # 벡터 수 설정
                 }
             }
