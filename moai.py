@@ -651,6 +651,27 @@ async def chabot(kakaoDict: Dict):
     if user_mode == 8:
         quiz_dict:dict = {'userid': user_id, 'query': query, 'quiz_res': quiz_res['quiz']}
         chatbot_quiz(settings=settings, data=quiz_dict, instance=global_instance, result=result)
+    #--------------------------------------
+    # 22=EZis-C Q&A
+    if user_mode == 22 or user_mode == 23:
+        text_search_dict:dict = {'userid': user_id, 'query': query, 'bi_encoder': g_BI_ENCODER, 'rerank_model': g_RERANK_MODEL}
+        es_index_name:str = ""
+        if user_mode == 22:
+            # *ES_INDEX_NAME_2를 설정함
+            es_index_name = settings['ES_INDEX_NAME_2']
+        else:
+            # *ES_INDEX_NAME_3를 설정함
+            es_index_name = settings['ES_INDEX_NAME_3']
+
+        #myutils.log_message(f"\t[chabot_test]user_mode:{user_mode}, es_inde_name:{es_index_name}\n")
+        chatbot_text_search(settings=settings, data=text_search_dict, instance=global_instance, result=result, es_index_name=es_index_name)
+        # 1002=질문에 맞는 내용을 찾지 못한 경우 '질문에 맞는 내용을 찾지 못했습니다. 질문을 다르게 해 보세요.' 메시지만 띄워줌.(콜백호출안함)
+        if result['error'] == 1002:
+            json_response = JSONResponse(content=result['template'])
+            id_manager.remove_id_all(user_id) # id 제거
+            return json_response 
+        elif result['error'] != 0:
+            return
     #-------------------------------------- 
     # [bong][2024-06-04] 30=개인문서검색
     if user_mode == 30:
@@ -746,13 +767,13 @@ async def searchdoc(content: Dict):
     return json_response
 
 #-----------------------------------------------------------
-# 회사문서검색
+# 제품 Q&A
 @app.post("/searchdoc2")
 async def searchdoc(content: Dict):
     if set_userinfo(content=content["userRequest"], user_mode=22) != 0:
         return
 
-    template = callback_template.searchdoc()
+    template = callback_template.product_qa()
     json_response = JSONResponse(content=template)
     return json_response
     
@@ -979,7 +1000,7 @@ async def setting(content: Dict):
         user_mode = 0
 
     if user_mode == 22:
-        user_mode_str = '회사문서검색(원본)'
+        user_mode_str = 'EZis-C Q&A'
     elif user_mode == 23:
         user_mode_str = '회사문서검색(GPT)'
     elif user_mode == 30:

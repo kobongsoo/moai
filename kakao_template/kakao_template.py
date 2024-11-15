@@ -778,6 +778,44 @@ class Callback_Template:
     
         return template
     #---------------------------------------------------------------------------------
+    # 제품 Q&A
+    def product_qa(self):
+        
+        title = "📌제품 Q&A\n질문을 하면 제품 유지보수 했던 내역을🔍검색해서 모아이가 답을 합니다."
+        descript = '''현재는 2020년부터 2024년, EZis-C 관련 내역만🔍검색할 수 있습니다.\n\n[내용보기]를 누르면 💬내용을 자세히 볼 수 있습니다.
+        '''
+        
+        template = {
+            "version": "2.0",
+            "template": {
+                "outputs": [
+                    {
+                    "basicCard": {
+                        "title": title,
+                        "description": descript,
+                        "thumbnail": {
+                            "imageUrl": "http://k.kakaocdn.net/dn/Mmb4W/btsHMLeMhDX/uJ5t0hhGygv3OPpsnZGpFK/2x1.jpg"
+                        },
+                        "buttons": [
+                        {
+                          "action":  "message",
+                          "label": "로그인 실패 원인은?",
+                          "messageText": "로그인 실패 원인은?"
+                        },
+                        {
+                          "action":  "message",
+                          "label": "반출 다운로드 실패",
+                          "messageText": "반출 다운로드 실패"
+                        }
+                      ]
+                     }
+                    }
+                  ]
+               }
+            }
+    
+        return template
+    #---------------------------------------------------------------------------------
     # [bong][2024-06-03] 개인문서검색 클릭시 
     def searchuserdoc(self, linkurl:str):
         
