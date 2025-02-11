@@ -20,10 +20,10 @@
 ## 서비스 구축 방법
 ### 1. 외부 URL 
 - 카카오톡 연동을 위해 외부에서 내부 접근가능한 URL이 필요한데, 여기서는 ngrok 을 이용해서 만든다. 회원가입후 Your Authtoken  획득 후, ngrok.exe 다운로드 실행하면 됨.
-'''
+```
 ngrok config add-authtoken xxxxxxxxxxxxxxxxxx
 ngrok http 9000
-'''
+```
   <br> 참고 : https://ngrok.com/
   
 ### 2. 카카오톡 채널과 챗봇 개설 & 연동
