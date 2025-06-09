@@ -142,9 +142,9 @@ networks:
 ## 모아이 코드 수정-1
 - 모아이 코드를 수정하려면 여려 패키지를 설치해야 하므로, 여기서는 moai docker 이미지를 실행하고, jupyterlab을 실행해서 수정하는 방법을 설명한다.
 #### 1. compose 실행
-- 위 moai-compose.yml 를 compose로 실행한다.
+- 위 moai-compose.yml 를 compose로 데몬(-d) 으로 실행한다.
 ```
-docker compose -p m -f ./moai-compose.yml
+docker compose -p m -f ./moai-compose.yml up -d
 ```
 #### [참고] compose 로 중지
 ```
