@@ -146,6 +146,10 @@ networks:
 ```
 docker compose -p m -f ./moai-compose.yml
 ```
+#### [참고] compose 로 중지
+```
+docker compose -p m -f ./moai-compose.yml down
+```
 #### 2. jupyter 실행
 - exec로 moai 쉘로 들어가서, sh 로 jupyter을 실행해 준다.
 ```
