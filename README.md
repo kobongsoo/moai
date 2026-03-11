@@ -94,7 +94,7 @@ GOOGLE_SEARCH_ENGINE_ID: 구글 검색 엔진 id => 검색엔진 만들기: http
 - docker compose -p m -f ./moai-compose.yml up -d
 - 참고: [도커허브](https://hub.docker.com/repository/docker/bong9431/moai/general)
 ```
-# moai-compose.yml file
+# moai-compose-202603.yml file
 version: '1.0'
 
 services:
@@ -139,6 +139,43 @@ networks:
   es_network:
 
 ```
+```
+# moai-composeyml file
+# 202603월에 kibana 쪽은 뺌.
+version: '1.0'
+
+services:
+  elasticsearch:
+    image: bong9431/elasticsearch:7.17.13.1
+    restart: always
+    environment:
+      - discovery.type=single-node
+    ports: 
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - es_network
+    volumes:
+      - ./moai_es_data:/usr/share/elasticsearch/data
+
+  moai:
+      image: bong9431/moai:latest
+      restart: always
+      depends_on:
+        - elasticsearch
+      ports:
+        - 9000:9000
+        - 9999:9999
+      networks:
+        - es_network
+      volumes:
+        - ./moai_log:/moai/log
+        - ./moai_data:/moai/data
+
+networks:
+  es_network:
+```
+
 ## 모아이 코드 수정-1
 - 모아이 코드를 수정하려면 여려 패키지를 설치해야 하므로, 여기서는 moai docker 이미지를 실행하고, jupyterlab을 실행해서 수정하는 방법을 설명한다.
 #### 1. compose 실행
@@ -176,6 +213,9 @@ jupter started
   ```
   # 만든이미지 확인
   docker image ls
+
+  # 이미지 삭제
+  docker rmi bong9431/moai:1.6.5
   ```
 
   ```
