@@ -163,6 +163,26 @@ jupter started
 #### 3. jupyter 접속 확인
 - localhost:9999 로 접속 확인 해 본다. 토큰은 moai_log 폴더에 jupyter.log 파일을 열어보면 된다.
 
+#### 4. docker 이미지 생성.
+- 코드수정후 아래처럼 docker image를 만든다.
+  ```
+  docker commit -a "bong9431" -m "update moai" m-moai-1 bong9431/moai:1.6.6
+  # -a "bong9431" : 작성자 명
+  # -m "update moai" : 커밋 주석 메세지
+  # m-moai-1 : 실행중 혹은 중지된 모아이 컨테이너 이름.
+  # bong9431/moai:1.6.6. : hub.docker.com 에 만든 [저장소이름]:[태그버전] 명. 
+  ```
+
+  ```
+  # 만든이미지 확인
+  docker image ls
+  ```
+
+  ```
+  # Push : hub.docker.com에 해당 repository(bong9431/moai) 올리는 방법
+  docker push bong9431/moai:1.6.6
+  ```
+
 ## 모아이 코드 수정-2
 - 여기서는 moai docker 이미지를 jupyterlab 실행할수 있는 이미지로 만들고 수정하는 방법을 설명한다.
 #### 1. Dockerfile 생성.
