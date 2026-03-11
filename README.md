@@ -141,7 +141,7 @@ networks:
 ```
 ```
 # moai-composeyml file
-# 202603월에 kibana 쪽은 뺌.
+**202603월에 kibana 쪽은 뺌. 대신 아래 elasticsearch_test.ipynb 소스로 인덱스명을 얻어와서 인덱싱 잘되었는지 확인해야 햠**
 version: '1.1'
 
 services:
@@ -272,7 +272,8 @@ docker commit mj moai-jupyter:1.1
 ## 참고소스
 |명칭|설명|참고|
 |:----------------|:---------------------------------------------------------|--------|
-|[documet_embed](https://github.com/kobongsoo/moai/blob/master/documet_embed.ipynb)|문서들을 elasticsearch로 임베딩 하는 코드||
+|[documet_embed](https://github.com/kobongsoo/moai/blob/master/documet_embed.ipynb)|문서들을 elasticsearch로 임베딩 하는 코드|**모아이에 회사규정, 제품Q&A를 임베딩에 사용**|
+|[elasticsearch_test](https://github.com/kobongsoo/moai/blob/master/elasticsearch_test.ipynb)|엘라스틱서치 테스트|**es에 인덱스명, 계수등을 얻어올때 이용**|
 |[google_search](https://github.com/kobongsoo/moai/blob/master/google_search.ipynb)|구글 검색 예제|1일 10,000건 무료|
 |[google_vison_ocr](https://github.com/kobongsoo/moai/blob/master/google_vison_ocr.ipynb)|구글 비전 OCR 예제|1달 10,000건 무료, 10,000건당 1.5$|
 |[googletrans_test](https://github.com/kobongsoo/moai/blob/master/googletrans_test.ipynb)|구글 번역 예제|무료:번역 질이 좀 떨어짐|
