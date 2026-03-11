@@ -142,7 +142,7 @@ networks:
 ```
 # moai-composeyml file
 # 202603월에 kibana 쪽은 뺌.
-version: '1.0'
+version: '1.1'
 
 services:
   elasticsearch:
