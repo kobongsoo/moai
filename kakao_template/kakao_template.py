@@ -782,7 +782,7 @@ class Callback_Template:
     def product_qa(self):
         
         title = "📌제품 Q&A\n질문을 하면 제품 유지보수 했던 내역을🔍검색해서 모아이가 답을 합니다."
-        descript = '''현재는 2020년부터 2024년, EZis-C 관련 내역만🔍검색할 수 있습니다.\n\n[내용보기]를 누르면 💬내용을 자세히 볼 수 있습니다.
+        descript = '''현재는 2020년부터 2025년, EZis-C 관련 내역만🔍검색할 수 있습니다.\n\n[내용보기]를 누르면 💬내용을 자세히 볼 수 있습니다.
         '''
         
         template = {
