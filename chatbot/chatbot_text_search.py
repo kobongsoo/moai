@@ -42,6 +42,10 @@ def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict, es
         error_str, docs = es_embed_query(settings=settings, esindex=esindex, query=query, 
                                          search_size=search_size, bi_encoder=bi_encoder, qmethod=qmethod)
 
+        # [bong][20256-04-02] docs가 None이 되는 경우가 있어서 Exception 발생.
+        # => 'NoneType' object is not iterable
+        if docs is None:
+            docs = []
         #==============================================================
         # [bong][2024-05-21] ReRank 사용일때 처리
         #==============================================================
@@ -82,7 +86,7 @@ def chatbot_text_search(settings:dict, data:dict, instance:dict, result:dict, es
         result['error'] = 1002
     else:
         # 답변 설정
-        text = "🔍회사문서검색 완료. 답변 대기중.." 
+        text = "🔍제품 Q&A 검색완료. 답변 대기중.." 
         template = callback_template.usecallback_template(text=text, usercallback=True)
 
     result['prompt'] = prompt
